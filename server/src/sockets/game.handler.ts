@@ -10,7 +10,7 @@ const gameRooms: Map<string, any> = new Map();
 const lobbyRooms: Map<string, any> = new Map();
 // Track socket to roomId mapping for reliable roomId retrieval
 const socketRoomMap: Map<string, string> = new Map();
-const TOTAL_ROUNDS = 25;
+const TOTAL_ROUNDS = 18;
 
 async function endGameAndSave(
   roomId: string,
@@ -74,7 +74,7 @@ function initializeGameState(roomId: string, players: any[]) {
     currentIcons: [],
     guesserId: null,
     clueGiverId: null,
-    timer: 60,
+    timer: 90,
     isRoundActive: false,
     timerId: null,
     currentRound: 0,
@@ -144,7 +144,7 @@ export const registerGameHandlers = (io: Server) => {
           room.currentMovie = selectedMovie.title;
           room.currentMovieData = selectedMovie;
           room.currentIcons = [];
-          room.timer = 60;
+          room.timer = 90;
 
           const playerIds = Array.from(room.players.keys());
           room.clueGiverId = playerIds[0];

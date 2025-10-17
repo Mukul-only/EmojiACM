@@ -14,6 +14,7 @@ This directory contains all the movie posters used in the Emoji Movie Guesser ga
 ## Required Files
 
 Easy Movies:
+
 - matrix.jpg
 - inception.jpg
 - titanic.jpg
@@ -24,6 +25,7 @@ Easy Movies:
 - godfather.jpg
 
 Medium Movies:
+
 - avatar.jpg
 - interstellar.jpg
 - dark-knight.jpg
@@ -34,6 +36,7 @@ Medium Movies:
 - back-to-future.jpg
 
 Hard Movies:
+
 - citizen-kane.jpg
 - casablanca.jpg
 - psycho.jpg

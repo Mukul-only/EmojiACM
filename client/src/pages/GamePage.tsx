@@ -18,7 +18,7 @@ import {
 import GameOver from "../components/GameOver";
 import MoviePoster from "../components/MoviePoster";
 import { getMovieByTitle } from "../data/movies";
-import { getTMDBPosterUrl, searchMovie } from "../utils/tmdb";
+// Local movie poster handling
 
 // Import rule images
 import rule1Image from "../assets/rules/rule1.png";
@@ -347,7 +347,6 @@ const GamePage = () => {
   const [isGameOver, setIsGameOver] = useState(false);
   const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
-  const [tmdbPosterUrl, setTmdbPosterUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token || !user) {
@@ -445,25 +444,6 @@ const GamePage = () => {
   };
 
   const movie = getMovieByTitle(gameState.movieTitle || "");
-
-  // Fetch TMDB poster when movie changes
-  useEffect(() => {
-    const fetchTMDBPoster = async () => {
-      if (movie && movie.tmdbId) {
-        // If movie has TMDB ID, search by title and year to get poster
-        const tmdbMovie = await searchMovie(movie.title, movie.year);
-        if (tmdbMovie && tmdbMovie.poster_path) {
-          setTmdbPosterUrl(getTMDBPosterUrl(tmdbMovie.poster_path, "w780"));
-        } else {
-          setTmdbPosterUrl(null);
-        }
-      } else {
-        setTmdbPosterUrl(null);
-      }
-    };
-
-    fetchTMDBPoster();
-  }, [movie]);
 
   if (!isConnected && !error) {
     return (
@@ -722,26 +702,16 @@ const GamePage = () => {
                 <div className="relative w-full max-w-sm overflow-hidden border shadow-2xl rounded-2xl border-white/20 bg-gradient-to-br from-slate-900 to-slate-800">
                   <div className="relative aspect-[2/3] w-full">
                     <img
-                      src={tmdbPosterUrl || movie.posterUrl}
+                      src={movie.posterUrl}
                       alt={`${movie.title} movie poster`}
                       className="object-cover w-full h-full"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        // Fallback to local poster, then placeholder
-                        if (target.src !== movie.posterUrl) {
-                          target.src = movie.posterUrl;
-                        } else {
-                          target.src = `https://via.placeholder.com/300x450/1a1a1a/ffffff?text=${encodeURIComponent(
-                            movie.title
-                          )}`;
-                        }
+                        target.src = `https://via.placeholder.com/300x450/1a1a1a/ffffff?text=${encodeURIComponent(
+                          movie.title
+                        )}`;
                       }}
                     />
-                    {tmdbPosterUrl && (
-                      <div className="absolute px-2 py-1 text-xs font-semibold rounded-full top-2 right-2 bg-black/60 backdrop-blur-sm text-white/80">
-                        TMDB
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
