@@ -363,13 +363,33 @@ const GamePage = () => {
         socket.on("round_start", (data) => {
           if (user._id === data.clueGiverId) setMyRole("clue-giver");
           else if (user._id === data.guesserId) setMyRole("guesser");
-          setGameState({ ...data, isRoundActive: true, message: "" });
+          setGameState((prev) => ({
+            ...prev,
+            ...data,
+            isRoundActive: true,
+            message: "",
+            icons: [], // Clear emojis when new round starts
+          }));
           setGuessHistory([]);
           setShowIconPicker(false);
         });
 
+        socket.on("clue_giver_data", (data) => {
+          setGameState((prev) => ({
+            ...prev,
+            movieTitle: data.movieTitle,
+            movieData: data.movieData,
+          }));
+        });
+
         socket.on("round_end", (data) => {
-          setGameState((prev) => ({ ...prev, ...data, isRoundActive: false }));
+          setGameState((prev) => ({
+            ...prev,
+            ...data,
+            isRoundActive: false,
+            movieTitle: "",
+            movieData: null,
+          }));
           setMyRole(null);
           if (data.teamScore !== undefined) setTeamScore(data.teamScore);
         });
@@ -399,6 +419,10 @@ const GamePage = () => {
         socket.on("icon_update", ({ icons }) =>
           setGameState((prev) => ({ ...prev, icons }))
         );
+        socket.on("roles_switched", ({ clueGiverId, guesserId }) => {
+          if (user._id === clueGiverId) setMyRole("clue-giver");
+          else if (user._id === guesserId) setMyRole("guesser");
+        });
         socket.on("error", ({ message }) => {
           setError(message);
           setTimeout(() => setError(""), 3000);
@@ -707,9 +731,94 @@ const GamePage = () => {
                       className="object-cover w-full h-full"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.src = `https://via.placeholder.com/300x450/1a1a1a/ffffff?text=${encodeURIComponent(
-                          movie.title
-                        )}`;
+                        const canvas = document.createElement("canvas");
+                        const ctx = canvas.getContext("2d");
+
+                        // Set canvas size (2:3 aspect ratio)
+                        canvas.width = 600;
+                        canvas.height = 900;
+
+                        if (ctx) {
+                          // Create gradient background
+                          const gradient = ctx.createLinearGradient(
+                            0,
+                            0,
+                            0,
+                            canvas.height
+                          );
+                          gradient.addColorStop(0, "#1a1a2e");
+                          gradient.addColorStop(1, "#16213e");
+                          ctx.fillStyle = gradient;
+                          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                          // Add decorative elements
+                          ctx.strokeStyle = "rgba(123, 255, 102, 0.2)";
+                          ctx.lineWidth = 4;
+                          ctx.beginPath();
+                          ctx.moveTo(50, 50);
+                          ctx.lineTo(canvas.width - 50, 50);
+                          ctx.lineTo(canvas.width - 50, canvas.height - 50);
+                          ctx.lineTo(50, canvas.height - 50);
+                          ctx.lineTo(50, 50);
+                          ctx.stroke();
+
+                          // Add main title text
+                          ctx.fillStyle = "#7BFF66";
+                          ctx.font = "bold 60px sans-serif";
+                          ctx.textAlign = "center";
+                          ctx.fillText(
+                            "INFOTREK'25",
+                            canvas.width / 2,
+                            canvas.height / 2 - 60
+                          );
+
+                          ctx.fillStyle = "white";
+                          ctx.font = "bold 48px sans-serif";
+                          ctx.fillText(
+                            "NITT",
+                            canvas.width / 2,
+                            canvas.height / 2
+                          );
+
+                          ctx.fillStyle = "#7BFF66";
+                          ctx.font = "bold 36px sans-serif";
+                          ctx.fillText(
+                            "EmojiCharades",
+                            canvas.width / 2,
+                            canvas.height / 2 + 60
+                          );
+
+                          // Add movie title
+                          ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+                          ctx.font = "24px sans-serif";
+
+                          // Word wrap the movie title
+                          const words = movie.title.split(" ");
+                          let line = "";
+                          let y = canvas.height / 2 + 150;
+                          words.forEach((word) => {
+                            const testLine = line + word + " ";
+                            const metrics = ctx.measureText(testLine);
+                            if (metrics.width > canvas.width - 100) {
+                              ctx.fillText(line, canvas.width / 2, y);
+                              line = word + " ";
+                              y += 30;
+                            } else {
+                              line = testLine;
+                            }
+                          });
+                          ctx.fillText(line, canvas.width / 2, y);
+
+                          // Add emoji decoration
+                          ctx.font = "40px sans-serif";
+                          ctx.fillText(
+                            "🎬 🎭 🎪",
+                            canvas.width / 2,
+                            canvas.height - 100
+                          );
+                        }
+
+                        target.src = canvas.toDataURL();
                       }}
                     />
                   </div>

@@ -9,6 +9,7 @@ import cookieParser from "cookie-parser";
 import config from "./config";
 import authRoutes from "./routes/auth.routes";
 import gameRoutes from "./routes/game.routes";
+import movieRoutes from "./routes/movie.routes";
 import { socketAuthMiddleware } from "./middleware/socket.auth.middleware";
 import { registerGameHandlers } from "./sockets/game.handler";
 
@@ -30,6 +31,7 @@ app.use(cookieParser());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/game", gameRoutes);
+app.use("/api/movies", movieRoutes);
 
 // Socket.IO
 io.of("/game").use(socketAuthMiddleware);

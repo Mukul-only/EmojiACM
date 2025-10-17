@@ -1,11 +1,12 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { FaTrophy, FaHome } from "react-icons/fa";
-import { IoGameController } from "react-icons/io5";
 
-interface GameOverProps {}
+interface GameOverProps {
+  finalScore: number;
+}
 
-const GameOver: React.FC<GameOverProps> = () => {
+const GameOver: React.FC<GameOverProps> = ({ finalScore }) => {
   const navigate = useNavigate();
 
   return (
@@ -44,12 +45,12 @@ const GameOver: React.FC<GameOverProps> = () => {
         {/* Game Stats Icon */}
         <div className="flex items-center justify-center gap-4 p-4 mx-auto border rounded-2xl bg-brand-dark/60 border-[#7BFF66]/10">
           <div className="p-3 rounded-xl bg-[#7BFF66]/10">
-            <IoGameController className="text-3xl text-[#7BFF66]" />
+            <FaTrophy className="text-3xl text-[#7BFF66]" />
           </div>
           <div className="text-left">
-            <p className="text-sm font-medium text-white/60">Great Game!</p>
+            <p className="text-sm font-medium text-white/60">Final Score</p>
             <p className="text-lg font-semibold text-white">
-              See you next time
+              {finalScore} points
             </p>
           </div>
         </div>

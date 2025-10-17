@@ -66,14 +66,34 @@ async function endGameAndSave(
 }
 
 function initializeGameState(roomId: string, players: any[]) {
+  // Ensure we have exactly two players
+  if (players.length !== 2) {
+    throw new Error("Game requires exactly two players");
+  }
+
+  // Randomly assign initial roles using more robust randomization
+  const playersCopy = [...players]; // Create a copy to not modify the original array
+  const randomIndex = Math.floor(Math.random() * 2); // 0 or 1
+  const [clueGiver, guesser] =
+    randomIndex === 0
+      ? [playersCopy[0], playersCopy[1]]
+      : [playersCopy[1], playersCopy[0]];
+
+  console.log("[DEBUG] Assigning initial roles in room:", roomId, {
+    clueGiver: clueGiver.username,
+    guesser: guesser.username,
+    clueGiverId: clueGiver.id,
+    guesserId: guesser.id,
+  });
+
   gameRooms.set(roomId, {
     players: new Map(players.map((p) => [p.id, { username: p.username }])),
     teamScore: 0,
     currentMovie: "",
     currentMovieData: null,
     currentIcons: [],
-    guesserId: null,
-    clueGiverId: null,
+    guesserId: guesser.id,
+    clueGiverId: clueGiver.id,
     timer: 90,
     isRoundActive: false,
     timerId: null,
@@ -122,6 +142,38 @@ export const registerGameHandlers = (io: Server) => {
         teamScore: gameRooms.get(roomId)?.teamScore || 0,
       });
 
+      socket.on("switch_roles", () => {
+        const roomId = socketRoomMap.get(socket.id);
+        if (!roomId) {
+          socket.emit("error", { message: "Room not found" });
+          return;
+        }
+
+        const room = gameRooms.get(roomId);
+        if (room && !room.isRoundActive) {
+          // Switch roles using array destructuring
+          [room.clueGiverId, room.guesserId] = [
+            room.guesserId,
+            room.clueGiverId,
+          ];
+
+          console.log("[DEBUG] Roles manually switched in room:", roomId, {
+            clueGiverId: room.clueGiverId,
+            guesserId: room.guesserId,
+          });
+
+          gameNamespace.to(roomId).emit("roles_switched", {
+            clueGiverId: room.clueGiverId,
+            guesserId: room.guesserId,
+            message: "Roles have been manually switched! 🔄",
+          });
+        } else {
+          socket.emit("error", {
+            message: "Cannot switch roles during an active round",
+          });
+        }
+      });
+
       socket.on("start_round", async () => {
         const roomId = socketRoomMap.get(socket.id);
         if (!roomId) {
@@ -146,21 +198,37 @@ export const registerGameHandlers = (io: Server) => {
           room.currentIcons = [];
           room.timer = 90;
 
-          const playerIds = Array.from(room.players.keys());
-          room.clueGiverId = playerIds[0];
-          room.guesserId = playerIds[1];
+          // Use existing roles instead of reassigning
+          if (!room.clueGiverId || !room.guesserId) {
+            const playerIds = Array.from(room.players.keys());
+            room.clueGiverId = playerIds[0];
+            room.guesserId = playerIds[1];
+          }
 
+          // Send movie data only to clue giver, other data to everyone
           gameNamespace.to(roomId).emit("round_start", {
             clueGiverId: room.clueGiverId,
             guesserId: room.guesserId,
-            movieTitle: room.currentMovie,
-            movieData: room.currentMovieData,
             movieToGuess: "🎬".repeat(
-              room.currentMovie.replace(/ /g, "").length
+              selectedMovie.title.replace(/ /g, "").length
             ),
             currentRound: room.currentRound,
             totalRounds: room.totalRounds,
+            isRoundActive: true,
+            timeLeft: 90,
           });
+
+          // Send additional movie data only to clue giver using the room
+          const clueGiverSocket = Array.from(
+            gameNamespace.sockets.values()
+          ).find((s: any) => s.user?.id === room.clueGiverId);
+
+          if (clueGiverSocket) {
+            gameNamespace.to(clueGiverSocket.id).emit("clue_giver_data", {
+              movieTitle: selectedMovie.title,
+              movieData: selectedMovie,
+            });
+          }
 
           room.timerId = setInterval(() => {
             room.timer--;
@@ -170,10 +238,16 @@ export const registerGameHandlers = (io: Server) => {
             if (room.timer <= 0) {
               clearInterval(room.timerId);
               room.isRoundActive = false;
+              // Clear movie data at the end of the round
+              const movieTitle = room.currentMovie;
+              room.currentMovie = "";
+              room.currentMovieData = null;
+              room.currentIcons = [];
               gameNamespace.to(roomId).emit("round_end", {
                 correct: false,
-                message: `Time's up! The movie was: ${room.currentMovie}`,
+                message: `Time's up! The movie was: ${movieTitle}`,
                 teamScore: room.teamScore,
+                movieData: null, // Explicitly clear movie data in client
               });
             }
           }, 1000);
@@ -277,10 +351,43 @@ export const registerGameHandlers = (io: Server) => {
             clearInterval(room.timerId);
             room.teamScore += room.timer;
             room.isRoundActive = false;
+
+            // Swap roles after a successful guess
+            [room.clueGiverId, room.guesserId] = [
+              room.guesserId,
+              room.clueGiverId,
+            ];
+
+            console.log(
+              "[DEBUG] Roles switched after successful guess in room:",
+              roomId,
+              {
+                clueGiverId: room.clueGiverId,
+                guesserId: room.guesserId,
+              }
+            );
+
+            // Store movie title before clearing
+            const movieTitle = room.currentMovie;
+
+            // Clear movie data at the end of the round
+            room.currentMovie = "";
+            room.currentMovieData = null;
+            room.currentIcons = [];
+
+            // First emit round_end
             gameNamespace.to(roomId).emit("round_end", {
               correct: true,
-              message: `${socket.user.username} guessed it! The movie was: ${room.currentMovie}`,
+              message: `${socket.user.username} guessed it! The movie was: ${movieTitle}`,
               teamScore: room.teamScore,
+              movieData: null, // Explicitly clear movie data in client
+            });
+
+            // Then emit roles_switched with updated roles
+            gameNamespace.to(roomId).emit("roles_switched", {
+              clueGiverId: room.clueGiverId,
+              guesserId: room.guesserId,
+              message: "Roles have been switched for the next round! 🔄",
             });
           } else {
             socket.emit("guess_result", { correct: false });
@@ -430,12 +537,29 @@ export const registerGameHandlers = (io: Server) => {
           }));
 
           initializeGameState(roomId, players);
+          const gameRoom = gameRooms.get(roomId);
 
-          gameNamespace.to(roomId).emit("game_start");
+          // Notify players of initial roles
+          gameNamespace.to(roomId).emit("game_start", {
+            clueGiverId: gameRoom.clueGiverId,
+            guesserId: gameRoom.guesserId,
+            message:
+              "Game starting! Players have been assigned their initial roles.",
+          });
+
+          // Also emit a roles_switched event for initial role assignment
+          gameNamespace.to(roomId).emit("roles_switched", {
+            clueGiverId: gameRoom.clueGiverId,
+            guesserId: gameRoom.guesserId,
+            message: "Initial roles have been assigned!",
+          });
 
           lobbyRooms.delete(roomId);
 
-          console.log("[DEBUG] Game started successfully for room:", roomId);
+          console.log("[DEBUG] Game started successfully for room:", roomId, {
+            clueGiverId: gameRoom.clueGiverId,
+            guesserId: gameRoom.guesserId,
+          });
         } catch (error) {
           console.error("Error in start_game:", error);
           socket.emit("error", { message: "Failed to start game" });
