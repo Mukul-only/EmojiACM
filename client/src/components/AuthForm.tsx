@@ -2,21 +2,16 @@ import React, { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 
 const AuthForm = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { login, signup } = useAuth();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     try {
-      if (isLogin) {
-        await login({ identifier, password });
-      } else {
-        await signup({ username: identifier, password });
-      }
+      await login({ identifier, password });
     } catch (err: any) {
       setError(err.response?.data?.message || "An error occurred");
     }
@@ -54,16 +49,6 @@ const AuthForm = () => {
         />
       </div>
 
-      {/* Forgot Password Link */}
-      <div className="text-right">
-        <button
-          type="button"
-          className="text-primary hover:text-primary/80 transition-colors text-sm"
-        >
-          Forgot Password?
-        </button>
-      </div>
-
       {/* Error Message */}
       {error && <div className="text-red-400 text-sm text-center">{error}</div>}
 
@@ -72,33 +57,8 @@ const AuthForm = () => {
         type="submit"
         className="w-full py-3 bg-primary text-brand-dark font-medium rounded-lg hover:shadow-lg hover:shadow-primary/25 transition-all duration-300 hover:scale-[1.02]"
       >
-        {isLogin ? "Sign in" : "Sign up"}
+        Sign in
       </button>
-
-      {/* Sign Up Link */}
-      <div className="text-center">
-        <span className="text-text-primary text-sm">
-          {isLogin ? "haven't registered yet?" : "Already have an account?"}{" "}
-        </span>
-        {isLogin ? (
-          <a
-            href="https://infotrek25.tech/events"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:text-primary/80 transition-colors text-sm font-medium"
-          >
-            sign up
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-primary hover:text-primary/80 transition-colors text-sm font-medium"
-          >
-            sign in
-          </button>
-        )}
-      </div>
     </form>
   );
 };

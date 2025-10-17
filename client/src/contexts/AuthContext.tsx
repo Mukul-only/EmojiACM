@@ -3,14 +3,13 @@ import type { ReactNode } from "react";
 import type { User, AuthContextType } from "../types";
 import * as authApi from "../api/auth.api";
 
-// --- CHANGE 1: Add token to the context type ---
 export const AuthContext = createContext<
   (AuthContextType & { token: string | null }) | null
 >(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  // --- CHANGE 2: Add state for the token, initialized from localStorage ---
+
   const [token, setToken] = useState<string | null>(() =>
     localStorage.getItem("authToken")
   );

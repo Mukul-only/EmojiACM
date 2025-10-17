@@ -2,11 +2,9 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { FaTrophy, FaHome } from "react-icons/fa";
 
-interface GameOverProps {
-  finalScore: number;
-}
+interface GameOverProps {}
 
-const GameOver: React.FC<GameOverProps> = ({ finalScore }) => {
+const GameOver: React.FC<GameOverProps> = () => {
   const navigate = useNavigate();
 
   return (
@@ -42,15 +40,14 @@ const GameOver: React.FC<GameOverProps> = ({ finalScore }) => {
           </p>
         </div>
 
-        {/* Game Stats Icon */}
+        {/* Success Message */}
         <div className="flex items-center justify-center gap-4 p-4 mx-auto border rounded-2xl bg-brand-dark/60 border-[#7BFF66]/10">
           <div className="p-3 rounded-xl bg-[#7BFF66]/10">
             <FaTrophy className="text-3xl text-[#7BFF66]" />
           </div>
           <div className="text-left">
-            <p className="text-sm font-medium text-white/60">Final Score</p>
             <p className="text-lg font-semibold text-white">
-              {finalScore} points
+              Game Completed Successfully!
             </p>
           </div>
         </div>

@@ -1,16 +1,17 @@
-import { Server } from "socket.io";
+import { Server, Namespace } from "socket.io";
 import { AuthenticatedSocket } from "../middleware/socket.auth.middleware";
-import { Registration } from "../models/registration.model";
+import { Registration, IRegistration } from "../models/registration.model";
 import { Leaderboard } from "../models/leaderboard.model";
 import { GameHistory } from "../models/gameHistory.model";
-import { getRandomMovie } from "../data/movies";
+import { User } from "../models/user.model";
+import { getRandomMovie, resetUsedMovies } from "../data/movies";
 import type { Movie } from "../data/movies";
 
 const gameRooms: Map<string, any> = new Map();
 const lobbyRooms: Map<string, any> = new Map();
 // Track socket to roomId mapping for reliable roomId retrieval
 const socketRoomMap: Map<string, string> = new Map();
-const TOTAL_ROUNDS = 18;
+const TOTAL_ROUNDS = 14;
 
 async function endGameAndSave(
   roomId: string,
@@ -23,15 +24,23 @@ async function endGameAndSave(
   try {
     const finalRegistration = await Registration.findById(roomId);
     if (finalRegistration) {
+      // Get user IDs from roll numbers
+      const teamUsers = await User.find({
+        rollNumber: { $in: finalRegistration.members },
+      });
+
+      const memberIds = teamUsers.map((user) => user._id);
+
       await Leaderboard.findOneAndUpdate(
         { registrationId: roomId },
         {
           teamName: finalRegistration.groupName,
-          members: finalRegistration.members,
+          members: memberIds,
           score: room.teamScore,
         },
         { upsert: true, new: true, setDefaultsOnInsert: true }
       );
+
       console.log(
         `[Leaderboard] Saved final score for team ${finalRegistration.groupName}: ${room.teamScore}`
       );
@@ -61,7 +70,10 @@ async function endGameAndSave(
     console.error("[GameHistory] Failed to save game history:", dbError);
   }
 
-  gameNamespace.to(roomId).emit("game_over", { teamScore: room.teamScore });
+  // Emit game_over without the score
+  gameNamespace.to(roomId).emit("game_over", {
+    message: "Game completed! Your score has been recorded.",
+  });
   gameRooms.delete(roomId);
 }
 
@@ -94,7 +106,7 @@ function initializeGameState(roomId: string, players: any[]) {
     currentIcons: [],
     guesserId: guesser.id,
     clueGiverId: clueGiver.id,
-    timer: 90,
+    timer: 120,
     isRoundActive: false,
     timerId: null,
     currentRound: 0,
@@ -115,10 +127,20 @@ export const registerGameHandlers = (io: Server) => {
     }
 
     try {
-      const registration = await Registration.findOne({
-        type: "group",
-        members: { $size: 2, $all: [socket.user.id] },
-      });
+      // Find if user is part of a team based on their roll number
+      const user = await User.findById(socket.user.id);
+      if (!user) throw new Error("User not found");
+
+      console.log(
+        "[DEBUG] Looking for registration with roll number:",
+        user.rollNumber
+      );
+
+      const registration = (await Registration.findOne({
+        members: { $all: [user.rollNumber] },
+      })) as IRegistration | null;
+
+      console.log("[DEBUG] Registration found:", registration);
 
       if (!registration) {
         socket.emit("error", { message: "Not eligible for any game." });
@@ -196,7 +218,7 @@ export const registerGameHandlers = (io: Server) => {
           room.currentMovie = selectedMovie.title;
           room.currentMovieData = selectedMovie;
           room.currentIcons = [];
-          room.timer = 90;
+          room.timer = 120;
 
           // Use existing roles instead of reassigning
           if (!room.clueGiverId || !room.guesserId) {
@@ -215,7 +237,7 @@ export const registerGameHandlers = (io: Server) => {
             currentRound: room.currentRound,
             totalRounds: room.totalRounds,
             isRoundActive: true,
-            timeLeft: 90,
+            timeLeft: 120,
           });
 
           // Send additional movie data only to clue giver using the room
@@ -408,15 +430,27 @@ export const registerGameHandlers = (io: Server) => {
         console.log("[DEBUG] Join Lobby - User:", socket.user.username);
 
         try {
+          // First get the user to find their roll number
+          const user = await User.findById(socket.user.id);
+          if (!user) {
+            socket.emit("error", { message: "User not found" });
+            return;
+          }
+
+          // Then find registration using roll number
           const registration = await Registration.findOne({
-            type: "group",
-            members: { $size: 2, $all: [socket.user.id] },
-          }).populate("members");
+            members: { $all: [user.rollNumber] },
+          });
 
           if (!registration) {
             socket.emit("error", { message: "No team registration found" });
             return;
           }
+
+          // Find all users with these roll numbers
+          const teamUsers = await User.find({
+            rollNumber: { $in: registration.members },
+          });
 
           const roomId = registration._id.toString();
 
@@ -449,14 +483,14 @@ export const registerGameHandlers = (io: Server) => {
               .filter((id) => id)
           );
 
-          const updatedPlayers = registration.members.map((member: any) => ({
-            id: member._id.toString(),
-            username: member.username,
-            email: member.email,
-            name: member.name,
-            rollNumber: member.rollNumber,
+          const updatedPlayers = teamUsers.map((user: any) => ({
+            id: user._id.toString(),
+            username: user.username,
+            email: user.email,
+            name: user.name,
+            rollNumber: user.rollNumber,
             teamName: registration.groupName,
-            isOnline: onlineUserIds.has(member._id.toString()),
+            isOnline: onlineUserIds.has(user._id.toString()),
           }));
 
           lobbyRoom.players = updatedPlayers;
@@ -554,6 +588,8 @@ export const registerGameHandlers = (io: Server) => {
             message: "Initial roles have been assigned!",
           });
 
+          // Reset used movies when starting a new game
+          resetUsedMovies();
           lobbyRooms.delete(roomId);
 
           console.log("[DEBUG] Game started successfully for room:", roomId, {

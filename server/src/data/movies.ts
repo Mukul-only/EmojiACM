@@ -5,25 +5,52 @@ export interface Movie {
   year: number;
   genre: string[];
   difficulty: "easy" | "medium" | "hard";
+  description?: string;
 }
 
+// Set to keep track of used movies during a game session
+const usedMovies = new Set<string>();
+
 export const MOVIES: Movie[] = [
-  // Easy Movies
   {
-    id: "matrix",
-    title: "The Matrix",
-    posterUrl: "/assets/movie-posters/matrix.jpg",
-    year: 1999,
-    genre: ["Action", "Sci-Fi"],
+    id: "jurassic-park",
+    title: "Jurassic Park",
+    posterUrl: "/assets/movie-posters/jurassic-park.jpg",
+    year: 1993,
+    genre: ["Action", "Adventure", "Sci-Fi"],
     difficulty: "easy",
   },
   {
-    id: "inception",
-    title: "Inception",
-    posterUrl: "/assets/movie-posters/inception.jpg",
-    year: 2010,
-    genre: ["Action", "Sci-Fi", "Thriller"],
+    id: "tomb-raider",
+    title: "Tomb Raider",
+    posterUrl: "/assets/movie-posters/tomb-raider.jpg",
+    year: 2018,
+    genre: ["Action", "Adventure", "Fantasy"],
     difficulty: "easy",
+  },
+  {
+    id: "prince-of-persia",
+    title: "Prince of Persia",
+    posterUrl: "/assets/movie-posters/prince-of-persia.jpg",
+    year: 2010,
+    genre: ["Action", "Adventure", "Fantasy"],
+    difficulty: "medium",
+  },
+  {
+    id: "pursuit-of-happyness",
+    title: "The Pursuit of Happyness",
+    posterUrl: "/assets/movie-posters/pursuit-of-happyness.jpg",
+    year: 2006,
+    genre: ["Biography", "Drama"],
+    difficulty: "medium",
+  },
+  {
+    id: "wolf-of-wall-street",
+    title: "The Wolf of Wall Street",
+    posterUrl: "/assets/movie-posters/wolf-of-wall-street.jpg",
+    year: 2013,
+    genre: ["Biography", "Crime", "Drama"],
+    difficulty: "medium",
   },
   {
     id: "titanic",
@@ -34,36 +61,12 @@ export const MOVIES: Movie[] = [
     difficulty: "easy",
   },
   {
-    id: "lion-king",
-    title: "The Lion King",
-    posterUrl: "/assets/movie-posters/lion-king.jpg",
-    year: 1994,
-    genre: ["Animation", "Adventure", "Drama"],
-    difficulty: "easy",
-  },
-  {
-    id: "forrest-gump",
-    title: "Forrest Gump",
-    posterUrl: "/assets/movie-posters/forrest-gump.jpg",
-    year: 1994,
-    genre: ["Drama", "Romance"],
-    difficulty: "easy",
-  },
-  {
-    id: "jaws",
-    title: "Jaws",
-    posterUrl: "/assets/movie-posters/jaws.jpg",
-    year: 1975,
-    genre: ["Thriller", "Horror"],
-    difficulty: "easy",
-  },
-  {
-    id: "pulp-fiction",
-    title: "Pulp Fiction",
-    posterUrl: "/assets/movie-posters/pulp-fiction.jpg",
-    year: 1994,
-    genre: ["Crime", "Drama"],
-    difficulty: "easy",
+    id: "money-heist",
+    title: "Money Heist",
+    posterUrl: "/assets/movie-posters/money-heist.jpg",
+    year: 2017,
+    genre: ["Action", "Crime", "Drama"],
+    difficulty: "medium",
   },
   {
     id: "godfather",
@@ -71,16 +74,6 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/godfather.jpg",
     year: 1972,
     genre: ["Crime", "Drama"],
-    difficulty: "easy",
-  },
-
-  // Medium Movies
-  {
-    id: "avatar",
-    title: "Avatar",
-    posterUrl: "/assets/movie-posters/avatar.jpg",
-    year: 2009,
-    genre: ["Action", "Adventure", "Fantasy"],
     difficulty: "medium",
   },
   {
@@ -89,104 +82,46 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/interstellar.jpg",
     year: 2014,
     genre: ["Adventure", "Drama", "Sci-Fi"],
-    difficulty: "medium",
-  },
-  {
-    id: "dark-knight",
-    title: "The Dark Knight",
-    posterUrl: "/assets/movie-posters/dark-knight.jpg",
-    year: 2008,
-    genre: ["Action", "Crime", "Drama"],
-    difficulty: "medium",
-  },
-  {
-    id: "avengers",
-    title: "The Avengers",
-    posterUrl: "/assets/movie-posters/avengers.jpg",
-    year: 2012,
-    genre: ["Action", "Adventure", "Sci-Fi"],
-    difficulty: "medium",
-  },
-  {
-    id: "frozen",
-    title: "Frozen",
-    posterUrl: "/assets/movie-posters/frozen.jpg",
-    year: 2013,
-    genre: ["Animation", "Adventure", "Comedy"],
-    difficulty: "medium",
-  },
-  {
-    id: "toy-story",
-    title: "Toy Story",
-    posterUrl: "/assets/movie-posters/toy-story.jpg",
-    year: 1995,
-    genre: ["Animation", "Adventure", "Comedy"],
-    difficulty: "medium",
-  },
-  {
-    id: "star-wars",
-    title: "Star Wars",
-    posterUrl: "/assets/movie-posters/star-wars.jpg",
-    year: 1977,
-    genre: ["Action", "Adventure", "Fantasy"],
-    difficulty: "medium",
-  },
-  {
-    id: "back-to-future",
-    title: "Back to the Future",
-    posterUrl: "/assets/movie-posters/back-to-future.jpg",
-    year: 1985,
-    genre: ["Adventure", "Comedy", "Sci-Fi"],
-    difficulty: "medium",
-  },
-
-  // Hard Movies
-  {
-    id: "citizen-kane",
-    title: "Citizen Kane",
-    posterUrl: "/assets/movie-posters/citizen-kane.jpg",
-    year: 1941,
-    genre: ["Drama", "Mystery"],
     difficulty: "hard",
   },
   {
-    id: "casablanca",
-    title: "Casablanca",
-    posterUrl: "/assets/movie-posters/casablanca.jpg",
-    year: 1942,
-    genre: ["Drama", "Romance", "War"],
-    difficulty: "hard",
-  },
-  {
-    id: "psycho",
-    title: "Psycho",
-    posterUrl: "/assets/movie-posters/psycho.jpg",
-    year: 1960,
+    id: "get-out",
+    title: "Get Out",
+    posterUrl: "/assets/movie-posters/get-out.jpg",
+    year: 2017,
     genre: ["Horror", "Mystery", "Thriller"],
     difficulty: "hard",
   },
   {
-    id: "vertigo",
-    title: "Vertigo",
-    posterUrl: "/assets/movie-posters/vertigo.jpg",
-    year: 1958,
-    genre: ["Mystery", "Romance", "Thriller"],
+    id: "joker",
+    title: "Joker",
+    posterUrl: "/assets/movie-posters/joker.jpg",
+    year: 2019,
+    genre: ["Crime", "Drama", "Thriller"],
+    difficulty: "medium",
+  },
+  {
+    id: "annabelle",
+    title: "Annabelle",
+    posterUrl: "/assets/movie-posters/annabelle.jpg",
+    year: 2014,
+    genre: ["Horror", "Mystery", "Thriller"],
+    difficulty: "medium",
+  },
+  {
+    id: "ddlj",
+    title: "Dil wale dulhaniya le jayenge",
+    posterUrl: "/assets/movie-posters/ddlj.jpg",
+    year: 1995,
+    genre: ["Drama", "Romance"],
     difficulty: "hard",
   },
   {
-    id: "sunset-boulevard",
-    title: "Sunset Boulevard",
-    posterUrl: "/assets/movie-posters/sunset-boulevard.jpg",
-    year: 1950,
-    genre: ["Drama", "Film-Noir"],
-    difficulty: "hard",
-  },
-  {
-    id: "singin-in-rain",
-    title: "Singin' in the Rain",
-    posterUrl: "/assets/movie-posters/singin-in-rain.jpg",
-    year: 1952,
-    genre: ["Comedy", "Musical", "Romance"],
+    id: "sooryavansham",
+    title: "Sooryavansham",
+    posterUrl: "/assets/movie-posters/sooryavansham.jpg",
+    year: 1999,
+    genre: ["Drama", "Family"],
     difficulty: "hard",
   },
 ];
@@ -199,16 +134,39 @@ export const getRandomMovie = (
     ? MOVIES.filter((movie) => movie.difficulty === difficulty)
     : MOVIES;
 
-  const randomIndex = Math.floor(Math.random() * filteredMovies.length);
-  return filteredMovies[randomIndex];
+  // Filter out used movies
+  const availableMovies = filteredMovies.filter(
+    (movie) => !usedMovies.has(movie.id)
+  );
+
+  // If all movies have been used, reset the usedMovies set
+  if (availableMovies.length === 0) {
+    usedMovies.clear();
+    return getRandomMovie(difficulty); // Retry with reset list
+  }
+
+  const randomIndex = Math.floor(Math.random() * availableMovies.length);
+  const selectedMovie = availableMovies[randomIndex];
+
+  // Mark the movie as used
+  usedMovies.add(selectedMovie.id);
+
+  return selectedMovie;
 };
 
-export const getMovieById = (id: string): Movie | undefined => {
-  return MOVIES.find((movie) => movie.id === id);
+export const getMovieByTitle = (title: string): Movie | undefined => {
+  return MOVIES.find(
+    (movie) => movie.title.toLowerCase() === title.toLowerCase()
+  );
 };
 
 export const getMoviesByDifficulty = (
   difficulty: "easy" | "medium" | "hard"
 ): Movie[] => {
   return MOVIES.filter((movie) => movie.difficulty === difficulty);
+};
+
+// Function to reset used movies (can be called when starting a new game)
+export const resetUsedMovies = () => {
+  usedMovies.clear();
 };

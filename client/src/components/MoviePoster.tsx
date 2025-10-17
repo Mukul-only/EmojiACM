@@ -1,5 +1,14 @@
 import React from "react";
-import type { Movie } from "../data/movies";
+
+interface Movie {
+  id: string;
+  title: string;
+  posterUrl: string;
+  year: number;
+  genre: string[];
+  difficulty: "easy" | "medium" | "hard";
+  description?: string;
+}
 
 interface MoviePosterProps {
   movie: Movie;
@@ -35,9 +44,11 @@ const MoviePoster: React.FC<MoviePosterProps> = ({ movie, className = "" }) => {
               <h3 className="text-xl font-bold text-white drop-shadow-lg">
                 {movie.title}
               </h3>
-              <p className="text-xs text-white/80">
-                {movie.description.split(" ").slice(0, 10).join(" ") + "..."}
-              </p>
+              {movie.description && (
+                <p className="text-xs text-white/80">
+                  {movie.description.split(" ").slice(0, 10).join(" ") + "..."}
+                </p>
+              )}
               <div className="flex items-center gap-3 text-sm text-white/80">
                 <span className="bg-white/20 px-2 py-1 rounded-full">
                   {movie.year}

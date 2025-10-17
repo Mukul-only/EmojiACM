@@ -115,18 +115,17 @@ export const login = async (req: Request, res: Response) => {
 export const getMe = async (req: Request, res: Response) => {
   const user = req.user as IUser;
   try {
-    // Find the registration where this user is a member
+    // Find the registration where this user's roll number is a member
     const registration = await Registration.findOne({
-      type: "group",
-      members: { $all: [user._id] },
+      members: { $all: [user.rollNumber] },
     });
 
     if (registration) {
-      // Find the other team member (excluding current user)
+      // Find the other team member by roll number (excluding current user)
       const teamMembers = await User.find({
-        _id: {
+        rollNumber: {
           $in: registration.members,
-          $ne: user._id, // Exclude current user
+          $ne: user.rollNumber, // Exclude current user
         },
       }).select("-password");
 

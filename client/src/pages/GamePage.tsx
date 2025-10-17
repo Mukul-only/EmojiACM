@@ -17,9 +17,6 @@ import {
 } from "react-icons/md";
 import GameOver from "../components/GameOver";
 import MoviePoster from "../components/MoviePoster";
-import { getMovieByTitle } from "../data/movies";
-// Local movie poster handling
-
 // Import rule images
 import rule1Image from "../assets/rules/rule1.png";
 import rule2Image from "../assets/rules/rule2.png";
@@ -28,11 +25,22 @@ import rule4Image from "../assets/rules/rule4.png";
 
 type PlayerRole = "guesser" | "clue-giver" | null;
 
+interface Movie {
+  id: string;
+  title: string;
+  posterUrl: string;
+  year: number;
+  genre: string[];
+  difficulty: "easy" | "medium" | "hard";
+  description?: string;
+}
+
 interface GameState {
   isRoundActive?: boolean;
   timeLeft?: number;
   movieToGuess?: string;
   movieTitle?: string;
+  movieData?: Movie;
   icons?: string[];
   message?: string;
   currentRound?: number;
@@ -44,14 +52,15 @@ interface Guess {
   guess: string;
 }
 
-const TOTAL_ROUNDS = 18;
+const TOTAL_ROUNDS = 14;
 
-// Enhanced Timer component with circular progress (supports 90 seconds)
+// Enhanced Timer component with circular progress (supports 120 seconds)
 const HudTimer: React.FC<{ timeLeft: number }> = ({ timeLeft }) => {
-  const percentage = (timeLeft / 90) * 100;
+  const percentage = (timeLeft / 120) * 100;
   const circumference = 2 * Math.PI * 20;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
+  // Updated color thresholds for 120 seconds
   const color =
     percentage > 50 ? "#10b981" : percentage > 25 ? "#f59e0b" : "#ef4444";
 
@@ -396,7 +405,6 @@ const GamePage = () => {
 
         socket.on("game_over", (data) => {
           setIsGameOver(true);
-          if (data.teamScore !== undefined) setTeamScore(data.teamScore);
         });
 
         socket.on("score_update", (data) => {
@@ -467,8 +475,6 @@ const GamePage = () => {
     setShowForfeitConfirm(false);
   };
 
-  const movie = getMovieByTitle(gameState.movieTitle || "");
-
   if (!isConnected && !error) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-950">
@@ -483,7 +489,7 @@ const GamePage = () => {
   }
 
   if (isGameOver) {
-    return <GameOver finalScore={teamScore} />;
+    return <GameOver />;
   }
 
   const renderActionArea = () => {
@@ -715,7 +721,7 @@ const GamePage = () => {
         )}
 
         {/* Clue Giver's Movie - Poster and Details Separately */}
-        {myRole === "clue-giver" && movie && (
+        {myRole === "clue-giver" && gameState.movieData && (
           <div className="w-full max-w-6xl px-4 animate-fadeIn">
             <p className="mb-6 text-sm font-semibold tracking-wider text-center text-white/60">
               YOUR MOVIE
@@ -726,8 +732,8 @@ const GamePage = () => {
                 <div className="relative w-full max-w-sm overflow-hidden border shadow-2xl rounded-2xl border-white/20 bg-gradient-to-br from-slate-900 to-slate-800">
                   <div className="relative aspect-[2/3] w-full">
                     <img
-                      src={movie.posterUrl}
-                      alt={`${movie.title} movie poster`}
+                      src={gameState.movieData.posterUrl}
+                      alt={`${gameState.movieData.title} movie poster`}
                       className="object-cover w-full h-full"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
@@ -793,7 +799,7 @@ const GamePage = () => {
                           ctx.font = "24px sans-serif";
 
                           // Word wrap the movie title
-                          const words = movie.title.split(" ");
+                          const words = gameState.movieData.title.split(" ");
                           let line = "";
                           let y = canvas.height / 2 + 150;
                           words.forEach((word) => {
@@ -829,23 +835,23 @@ const GamePage = () => {
               <div className="flex flex-col justify-center p-6 space-y-6 border bg-gray-800/50 backdrop-blur-xl rounded-2xl border-white/10">
                 <div>
                   <h2 className="mb-2 text-4xl font-bold text-white">
-                    {movie.title}
+                    {gameState.movieData.title}
                   </h2>
                   <div className="flex items-center gap-3 text-lg text-white/80">
                     <span className="px-3 py-1 rounded-full bg-white/20">
-                      {movie.year}
+                      {gameState.movieData.year}
                     </span>
                     <span
                       className={`px-3 py-1 rounded-full ${
-                        movie.difficulty === "easy"
+                        gameState.movieData.difficulty === "easy"
                           ? "bg-green-500/20 text-green-400"
-                          : movie.difficulty === "medium"
+                          : gameState.movieData.difficulty === "medium"
                           ? "bg-yellow-500/20 text-yellow-400"
                           : "bg-red-500/20 text-red-400"
                       }`}
                     >
-                      {movie.difficulty.charAt(0).toUpperCase() +
-                        movie.difficulty.slice(1)}
+                      {gameState.movieData.difficulty.charAt(0).toUpperCase() +
+                        gameState.movieData.difficulty.slice(1)}
                     </span>
                   </div>
                 </div>
@@ -855,7 +861,7 @@ const GamePage = () => {
                     GENRES
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {movie.genre.map((genre, index) => (
+                    {gameState.movieData.genre.map((genre, index) => (
                       <span
                         key={index}
                         className="text-sm bg-[#7BFF66]/20 text-[#7BFF66] px-3 py-1 rounded-full font-medium"
@@ -866,14 +872,16 @@ const GamePage = () => {
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="mb-2 text-sm font-semibold tracking-wider text-white/60">
-                    DESCRIPTION
-                  </h3>
-                  <p className="text-base leading-relaxed text-white/80">
-                    {movie.description}
-                  </p>
-                </div>
+                {gameState.movieData.description && (
+                  <div>
+                    <h3 className="mb-2 text-sm font-semibold tracking-wider text-white/60">
+                      DESCRIPTION
+                    </h3>
+                    <p className="text-base leading-relaxed text-white/80">
+                      {gameState.movieData.description}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

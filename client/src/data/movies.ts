@@ -1,133 +1,262 @@
-export interface Movie {
-  id: string;
-  title: string;
-  posterUrl: string;
-  year: number;
-  genre: string[];
-  description: string;
-  difficulty: "easy" | "medium" | "hard";
-}
+export interface Movie {export interface Movie {
 
-export const MOVIES: Movie[] = [
-  // Easy Movies
-  {
-    id: "matrix",
-    title: "The Matrix",
-    posterUrl: "/assets/movie-posters/matrix.jpg",
-    year: 1999,
-    genre: ["Action", "Sci-Fi"],
-    description: "A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers.",
-    difficulty: "easy"
-  },
-  {
-    id: "inception",
-    title: "Inception",
-    posterUrl: "/assets/movie-posters/inception.jpg",
-    year: 2010,
-    genre: ["Action", "Sci-Fi", "Thriller"],
-    description: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
-    difficulty: "easy"
-  },
-  {
-    id: "titanic",
-    title: "Titanic",
-    posterUrl: "/assets/movie-posters/titanic.jpg",
-    year: 1997,
-    genre: ["Drama", "Romance"],
-    description: "A seventeen-year-old aristocrat falls in love with a kind but poor artist aboard the luxurious, ill-fated R.M.S. Titanic.",
-    difficulty: "easy"
-  },
-  {
-    id: "lion-king",
-    title: "The Lion King",
-    posterUrl: "/assets/movie-posters/lion-king.jpg",
-    year: 1994,
-    genre: ["Animation", "Adventure", "Drama"],
-    description: "A young lion prince is cast out of his pride by his cruel uncle, who claims he killed his father, but later learns of his identity and his responsibilities.",
-    difficulty: "easy"
-  },
-  {
-    id: "forrest-gump",
-    title: "Forrest Gump",
-    posterUrl: "/assets/movie-posters/forrest-gump.jpg",
-    year: 1994,
-    genre: ["Drama", "Romance"],
-    description: "The presidencies of Kennedy and Johnson, the Vietnam War, the Watergate scandal and other historical events unfold from the perspective of an Alabama man with an IQ of 75, whose only desire is to be reunited with his childhood sweetheart.",
-    difficulty: "easy"
-  },
-  {
-    id: "jaws",
-    title: "Jaws",
-    posterUrl: "/assets/movie-posters/jaws.jpg",
-    year: 1975,
-    genre: ["Thriller", "Horror"],
-    description: "A giant man-eating great white shark attacks beachgoers on Amity Island, a fictional New England summer resort town, prompting police chief Martin Brody to hunt it with the help of a marine biologist and a professional shark hunter.",
-    difficulty: "easy"
-  },
-  {
-    id: "pulp-fiction",
-    title: "Pulp Fiction",
-    posterUrl: "/assets/movie-posters/pulp-fiction.jpg",
-    year: 1994,
-    genre: ["Crime", "Drama"],
-    description: "The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.",
-    difficulty: "easy"
-  },
-  {
-    id: "godfather",
-    title: "The Godfather",
-    posterUrl: "/assets/movie-posters/godfather.jpg",
-    year: 1972,
-    genre: ["Crime", "Drama"],
-    description: "The aging patriarch of an organized crime dynasty transfers control of his clandestine empire to his reluctant son.",
-    difficulty: "easy"
-  },
+  id: string;  id: string;
 
-  // Medium Movies
-  {
-    id: "avatar",
-    title: "Avatar",
-    posterUrl: "/assets/movie-posters/avatar.jpg",
-    year: 2009,
-    genre: ["Action", "Adventure", "Fantasy"],
-    description: "A paraplegic marine dispatched to the moon Pandora on a unique mission becomes torn between following orders and protecting the world he feels is his home.",
-    difficulty: "medium"
-  },
-  {
-    id: "interstellar",
-    title: "Interstellar",
-    posterUrl: "/assets/movie-posters/interstellar.jpg",
-    year: 2014,
-    genre: ["Adventure", "Drama", "Sci-Fi"],
-    description: "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
-    difficulty: "medium"
-  },
-  {
-    id: "dark-knight",
-    title: "The Dark Knight",
-    posterUrl: "/assets/movie-posters/dark-knight.jpg",
-    year: 2008,
-    genre: ["Action", "Crime", "Drama"],
-    description: "When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.",
-    difficulty: "medium"
-  },
-  {
-    id: "avengers",
-    title: "The Avengers",
-    posterUrl: "/assets/movie-posters/avengers.jpg",
-    year: 2012,
-    genre: ["Action", "Adventure", "Sci-Fi"],
-    description: "Earth's mightiest heroes must come together and learn to fight as a team if they are going to stop the mischievous Loki and his alien army from enslaving humanity.",
-    difficulty: "medium"
-  },
-  {
-    id: "frozen",
+  title: string;  title: string;
+
+  posterUrl: string;  posterUrl: string;
+
+  year: number;  year: number;
+
+  genre: string[];  genre: string[];
+
+  difficulty: "easy" | "medium" | "hard";  description: string;
+
+  description?: string;  difficulty: "easy" | "medium" | "hard";
+
+}}
+
+
+
+export const MOVIES: Movie[] = [export const MOVIES: Movie[] = [
+
+  {  // Easy Movies
+
+    id: "jurassic-park",  {
+
+    title: "Jurassic Park",    id: "matrix",
+
+    posterUrl: "/assets/movie-posters/jurassic-park.jpg",    title: "The Matrix",
+
+    year: 1993,    posterUrl: "/assets/movie-posters/matrix.jpg",
+
+    genre: ["Action", "Adventure", "Sci-Fi"],    year: 1999,
+
+    difficulty: "easy",    genre: ["Action", "Sci-Fi"],
+
+  },    description: "A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers.",
+
+  {    difficulty: "easy"
+
+    id: "tomb-raider",  },
+
+    title: "Tomb Raider",  {
+
+    posterUrl: "/assets/movie-posters/tomb-raider.jpg",    id: "inception",
+
+    year: 2018,    title: "Inception",
+
+    genre: ["Action", "Adventure", "Fantasy"],    posterUrl: "/assets/movie-posters/inception.jpg",
+
+    difficulty: "easy",    year: 2010,
+
+  },    genre: ["Action", "Sci-Fi", "Thriller"],
+
+  {    description: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
+
+    id: "prince-of-persia",    difficulty: "easy"
+
+    title: "Prince of Persia",  },
+
+    posterUrl: "/assets/movie-posters/prince-of-persia.jpg",  {
+
+    year: 2010,    id: "titanic",
+
+    genre: ["Action", "Adventure", "Fantasy"],    title: "Titanic",
+
+    difficulty: "medium",    posterUrl: "/assets/movie-posters/titanic.jpg",
+
+  },    year: 1997,
+
+  {    genre: ["Drama", "Romance"],
+
+    id: "pursuit-of-happyness",    description: "A seventeen-year-old aristocrat falls in love with a kind but poor artist aboard the luxurious, ill-fated R.M.S. Titanic.",
+
+    title: "The Pursuit of Happyness",    difficulty: "easy"
+
+    posterUrl: "/assets/movie-posters/pursuit-of-happyness.jpg",  },
+
+    year: 2006,  {
+
+    genre: ["Biography", "Drama"],    id: "lion-king",
+
+    difficulty: "medium",    title: "The Lion King",
+
+  },    posterUrl: "/assets/movie-posters/lion-king.jpg",
+
+  {    year: 1994,
+
+    id: "wolf-of-wall-street",    genre: ["Animation", "Adventure", "Drama"],
+
+    title: "The Wolf of Wall Street",    description: "A young lion prince is cast out of his pride by his cruel uncle, who claims he killed his father, but later learns of his identity and his responsibilities.",
+
+    posterUrl: "/assets/movie-posters/wolf-of-wall-street.jpg",    difficulty: "easy"
+
+    year: 2013,  },
+
+    genre: ["Biography", "Crime", "Drama"],  {
+
+    difficulty: "medium",    id: "forrest-gump",
+
+  },    title: "Forrest Gump",
+
+  {    posterUrl: "/assets/movie-posters/forrest-gump.jpg",
+
+    id: "titanic",    year: 1994,
+
+    title: "Titanic",    genre: ["Drama", "Romance"],
+
+    posterUrl: "/assets/movie-posters/titanic.jpg",    description: "The presidencies of Kennedy and Johnson, the Vietnam War, the Watergate scandal and other historical events unfold from the perspective of an Alabama man with an IQ of 75, whose only desire is to be reunited with his childhood sweetheart.",
+
+    year: 1997,    difficulty: "easy"
+
+    genre: ["Drama", "Romance"],  },
+
+    difficulty: "easy",  {
+
+  },    id: "jaws",
+
+  {    title: "Jaws",
+
+    id: "money-heist",    posterUrl: "/assets/movie-posters/jaws.jpg",
+
+    title: "Money Heist",    year: 1975,
+
+    posterUrl: "/assets/movie-posters/money-heist.jpg",    genre: ["Thriller", "Horror"],
+
+    year: 2017,    description: "A giant man-eating great white shark attacks beachgoers on Amity Island, a fictional New England summer resort town, prompting police chief Martin Brody to hunt it with the help of a marine biologist and a professional shark hunter.",
+
+    genre: ["Action", "Crime", "Drama"],    difficulty: "easy"
+
+    difficulty: "medium",  },
+
+  },  {
+
+  {    id: "pulp-fiction",
+
+    id: "godfather",    title: "Pulp Fiction",
+
+    title: "The Godfather",    posterUrl: "/assets/movie-posters/pulp-fiction.jpg",
+
+    posterUrl: "/assets/movie-posters/godfather.jpg",    year: 1994,
+
+    year: 1972,    genre: ["Crime", "Drama"],
+
+    genre: ["Crime", "Drama"],    description: "The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.",
+
+    difficulty: "medium",    difficulty: "easy"
+
+  },  },
+
+  {  {
+
+    id: "interstellar",    id: "godfather",
+
+    title: "Interstellar",    title: "The Godfather",
+
+    posterUrl: "/assets/movie-posters/interstellar.jpg",    posterUrl: "/assets/movie-posters/godfather.jpg",
+
+    year: 2014,    year: 1972,
+
+    genre: ["Adventure", "Drama", "Sci-Fi"],    genre: ["Crime", "Drama"],
+
+    difficulty: "hard",    description: "The aging patriarch of an organized crime dynasty transfers control of his clandestine empire to his reluctant son.",
+
+  },    difficulty: "easy"
+
+  {  },
+
+    id: "get-out",
+
+    title: "Get Out",  // Medium Movies
+
+    posterUrl: "/assets/movie-posters/get-out.jpg",  {
+
+    year: 2017,    id: "avatar",
+
+    genre: ["Horror", "Mystery", "Thriller"],    title: "Avatar",
+
+    difficulty: "hard",    posterUrl: "/assets/movie-posters/avatar.jpg",
+
+  },    year: 2009,
+
+  {    genre: ["Action", "Adventure", "Fantasy"],
+
+    id: "joker",    description: "A paraplegic marine dispatched to the moon Pandora on a unique mission becomes torn between following orders and protecting the world he feels is his home.",
+
+    title: "Joker",    difficulty: "medium"
+
+    posterUrl: "/assets/movie-posters/joker.jpg",  },
+
+    year: 2019,  {
+
+    genre: ["Crime", "Drama", "Thriller"],    id: "interstellar",
+
+    difficulty: "medium",    title: "Interstellar",
+
+  },    posterUrl: "/assets/movie-posters/interstellar.jpg",
+
+  {    year: 2014,
+
+    id: "annabelle",    genre: ["Adventure", "Drama", "Sci-Fi"],
+
+    title: "Annabelle",    description: "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
+
+    posterUrl: "/assets/movie-posters/annabelle.jpg",    difficulty: "medium"
+
+    year: 2014,  },
+
+    genre: ["Horror", "Mystery", "Thriller"],  {
+
+    difficulty: "medium",    id: "dark-knight",
+
+  },    title: "The Dark Knight",
+
+  {    posterUrl: "/assets/movie-posters/dark-knight.jpg",
+
+    id: "ddlj",    year: 2008,
+
+    title: "Dil wale dulhaniya le jayenge",    genre: ["Action", "Crime", "Drama"],
+
+    posterUrl: "/assets/movie-posters/ddlj.jpg",    description: "When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.",
+
+    year: 1995,    difficulty: "medium"
+
+    genre: ["Drama", "Romance"],  },
+
+    difficulty: "hard",  {
+
+  },    id: "avengers",
+
+  {    title: "The Avengers",
+
+    id: "sooryavansham",    posterUrl: "/assets/movie-posters/avengers.jpg",
+
+    title: "Sooryavansham",    year: 2012,
+
+    posterUrl: "/assets/movie-posters/sooryavansham.jpg",    genre: ["Action", "Adventure", "Sci-Fi"],
+
+    year: 1999,    description: "Earth's mightiest heroes must come together and learn to fight as a team if they are going to stop the mischievous Loki and his alien army from enslaving humanity.",
+
+    genre: ["Drama", "Family"],    difficulty: "medium"
+
+    difficulty: "hard",  },
+
+  },  {
+
+];    id: "frozen",
+
     title: "Frozen",
-    posterUrl: "/assets/movie-posters/frozen.jpg",
-    year: 2013,
-    genre: ["Animation", "Adventure", "Comedy"],
-    description: "When the newly crowned Queen Elsa accidentally uses her power to turn things into ice to curse her home in infinite winter, her sister Anna teams up with a mountain man, his playful reindeer, and a snowman to change the weather condition.",
-    difficulty: "medium"
+
+export const getMovieByTitle = (title: string): Movie | undefined => {    posterUrl: "/assets/movie-posters/frozen.jpg",
+
+  return MOVIES.find(    year: 2013,
+
+    (movie) => movie.title.toLowerCase() === title.toLowerCase()    genre: ["Animation", "Adventure", "Comedy"],
+
+  );    description: "When the newly crowned Queen Elsa accidentally uses her power to turn things into ice to curse her home in infinite winter, her sister Anna teams up with a mountain man, his playful reindeer, and a snowman to change the weather condition.",
+
+};    difficulty: "medium"
   },
   {
     id: "toy-story",
