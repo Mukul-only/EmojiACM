@@ -51,6 +51,10 @@ const LobbyPage = () => {
 
         // Listen for lobby updates
         socket.on("lobby_update", (data) => {
+          console.log("[DEBUG] Lobby Update:", {
+            players: data.players,
+            currentUser: user?.username,
+          });
           setLobbyState(data);
         });
 
@@ -90,8 +94,9 @@ const LobbyPage = () => {
   }, [navigate, token, user]);
 
   const handleStartGame = () => {
-    if (lobbyState.canStartGame) {
-      socketService.socket?.emit("start_game");
+    if (lobbyState.canStartGame && lobbyState.roomId) {
+      console.log("[DEBUG] Starting game for room:", lobbyState.roomId);
+      socketService.socket?.emit("start_game", { roomId: lobbyState.roomId });
     }
   };
 
@@ -100,16 +105,78 @@ const LobbyPage = () => {
     navigate("/");
   };
 
-  // --- NEW LOGIC ---
-  // Identify the current user and the other player from the lobby state.
-  // This is more reliable than using array indices.
-  const currentPlayer = lobbyState.players.find(
-    (p) => p.username === user?.username
-  );
-  const otherPlayer = lobbyState.players.find(
-    (p) => p.username !== user?.username
-  );
-  // --- END NEW LOGIC ---
+  // Log raw player data first
+  useEffect(() => {
+    if (lobbyState.players.length > 0) {
+      console.log(
+        "[DEBUG] Raw Players Data:",
+        lobbyState.players.map((p) => ({
+          username: p.username,
+          name: p.name,
+          email: p.email,
+          isOnline: p.isOnline,
+        }))
+      );
+    }
+  }, [lobbyState.players]);
+
+  // Find current and other player with more detailed matching
+  const currentPlayer = user
+    ? lobbyState.players.find((p) => {
+        console.log("[DEBUG] Comparing:", {
+          playerEmail: p.email,
+          playerUsername: p.username,
+          userEmail: user.email,
+          userUsername: user.username,
+        });
+        return (
+          p.email?.toLowerCase() === user.email?.toLowerCase() ||
+          p.username?.toLowerCase() === user.username?.toLowerCase()
+        );
+      })
+    : null;
+
+  const otherPlayer = currentPlayer
+    ? lobbyState.players.find((p) => p !== currentPlayer)
+    : null;
+
+  // Debug player matching
+  useEffect(() => {
+    console.log("[DEBUG] Player Matching:", {
+      lobbyState: {
+        players: lobbyState.players.map((p) => ({
+          id: p.id,
+          username: p.username,
+          name: p.name,
+          isOnline: p.isOnline,
+        })),
+        roomId: lobbyState.roomId,
+        canStartGame: lobbyState.canStartGame,
+      },
+      user: {
+        username: user?.username,
+        email: user?.email,
+      },
+      matching: {
+        currentPlayerFound: !!currentPlayer,
+        otherPlayerFound: !!otherPlayer,
+        currentPlayerDetails: currentPlayer
+          ? {
+              name: currentPlayer.name,
+              username: currentPlayer.username,
+              isOnline: currentPlayer.isOnline,
+            }
+          : null,
+        otherPlayerDetails: otherPlayer
+          ? {
+              name: otherPlayer.name,
+              username: otherPlayer.username,
+              isOnline: otherPlayer.isOnline,
+            }
+          : null,
+      },
+    });
+  }, [lobbyState, user, currentPlayer, otherPlayer]);
 
   if (!isConnected && !error) {
     return (
@@ -169,7 +236,11 @@ const LobbyPage = () => {
                       >
                         {currentPlayer ? (
                           <span className="text-4xl">
-                            {(currentPlayer.name || "")
+                            {(
+                              currentPlayer.name ||
+                              currentPlayer.username ||
+                              ""
+                            )
                               .split(" ")
                               .map((n) => n[0])
                               .join("")
@@ -181,7 +252,9 @@ const LobbyPage = () => {
                       </div>
                       <div className="space-y-1">
                         <p className="text-lg font-medium">
-                          {currentPlayer?.name || "You"}
+                          {currentPlayer?.name ||
+                            currentPlayer?.username ||
+                            "You"}
                         </p>
                         <p className="text-sm text-white/60">
                           Roll: {currentPlayer?.rollNumber || "-"}
@@ -208,7 +281,7 @@ const LobbyPage = () => {
                       >
                         {otherPlayer ? (
                           <span className="text-4xl">
-                            {(otherPlayer.name || "")
+                            {(otherPlayer.name || otherPlayer.username || "")
                               .split(" ")
                               .map((n) => n[0])
                               .join("")
@@ -220,7 +293,9 @@ const LobbyPage = () => {
                       </div>
                       <div className="space-y-1">
                         <p className="text-lg font-medium">
-                          {otherPlayer?.name || "Waiting..."}
+                          {otherPlayer?.name ||
+                            otherPlayer?.username ||
+                            "Waiting..."}
                         </p>
                         <p className="text-sm text-white/60">
                           Roll: {otherPlayer?.rollNumber || "-"}

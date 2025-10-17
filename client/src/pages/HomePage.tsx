@@ -10,6 +10,7 @@ import rule3Image from "../assets/rules/rule3.png";
 import rule4Image from "../assets/rules/rule4.png";
 
 import { useNavigate } from "react-router-dom";
+import { FaPlay } from "react-icons/fa";
 
 interface LandingPageProps {
   user: any;
@@ -87,7 +88,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
                 >
                   <span className="relative z-10 flex items-center space-x-3">
                     <span className="text-2xl group-hover:animate-bounce">
-                      🎮
+                      <FaPlay className="inline-block" />
                     </span>
                     <span>{user ? "Start Playing" : "Login to Play"}</span>
                     <span className="transition-transform group-hover:translate-x-1">
@@ -97,12 +98,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
                   <div className="absolute inset-0 transition-opacity opacity-0 bg-gradient-to-r from-purple-500/50 to-pink-500/50 backdrop-blur-xl rounded-2xl group-hover:opacity-100"></div>
                 </button>
 
-                <button className="px-8 py-4 text-lg font-semibold text-white transition-all duration-300 border bg-white/10 backdrop-blur-xl border-white/20 rounded-2xl hover:bg-white/20 hover:shadow-lg hover:scale-105 hover:-translate-y-1">
+                <a
+                  href="https://infotrek25.tech"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-8 py-4 text-lg font-semibold text-white transition-all duration-300 border bg-white/10 backdrop-blur-xl border-white/20 rounded-2xl hover:bg-white/20 hover:shadow-lg hover:scale-105 hover:-translate-y-1"
+                >
                   <span className="flex items-center space-x-3">
                     <span className="text-xl">📖</span>
                     <span>Learn More</span>
                   </span>
-                </button>
+                </a>
               </div>
 
               {/* Stats - Dark Theme */}
@@ -189,164 +195,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
         </div>
       </section>
 
-      {/* Judging & Prizes Section */}
-      <section className="relative px-4 py-20">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-16 text-center">
-            <h2 className="mb-4 text-5xl font-bold text-transparent bg-gradient-to-r from-white to-[#7BFF66] bg-clip-text">
-              Event Details & Prizes
-            </h2>
-            <p className="max-w-2xl mx-auto text-xl text-gray-300">
-              Speak fluent Emoji – Guess it right, win it bright! 🎉
-            </p>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-3">
-            {/* Judging Criteria */}
-            <div className="relative group">
-              <div className="h-full p-8 transition-all duration-300 border bg-[#161B22] rounded-3xl border-white/10">
-                <div className="flex items-center justify-center w-16 h-16 mb-6 transition-transform border rounded-2xl bg-[#1C2128] border-white/10">
-                  <span className="text-3xl">⚖️</span>
-                </div>
-                <h3 className="mb-4 text-2xl font-bold text-white">
-                  Judging Criteria
-                </h3>
-                <ul className="space-y-3 text-gray-300">
-                  <li className="flex items-center">
-                    <span className="mr-2">✓</span>
-                    Number of correct guesses
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2">✓</span>
-                    Time taken per guess
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2">✓</span>
-                    Emoji creativity
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Prize Pool */}
-            <div className="relative group">
-              <div className="h-full p-8 transition-all duration-300 border bg-[#161B22] rounded-3xl border-white/10">
-                <div className="flex items-center justify-center w-16 h-16 mb-6 transition-transform border rounded-2xl bg-[#1C2128] border-white/10">
-                  <span className="text-3xl">🏆</span>
-                </div>
-                <h3 className="mb-4 text-2xl font-bold text-white">
-                  Prize Pool
-                </h3>
-                <ul className="space-y-3 text-gray-300">
-                  <li className="flex items-center">
-                    <span className="mr-2">🥇</span>
-                    Prizes for top 3 teams
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2">🎁</span>
-                    Special creativity awards
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2">🌟</span>
-                    Participation certificates
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Why Participate */}
-            <div className="relative group">
-              <div className="h-full p-8 transition-all duration-300 border bg-[#161B22] rounded-3xl border-white/10">
-                <div className="flex items-center justify-center w-16 h-16 mb-6 transition-transform border rounded-2xl bg-[#1C2128] border-white/10">
-                  <span className="text-3xl">💡</span>
-                </div>
-                <h3 className="mb-4 text-2xl font-bold text-white">
-                  Why Participate?
-                </h3>
-                <ul className="space-y-3 text-gray-300">
-                  <li className="flex items-center">
-                    <span className="mr-2">💪</span>
-                    Break from technical stress
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2">🎯</span>
-                    Test communication skills
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2">🎬</span>
-                    Show off movie knowledge
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Event Info Section */}
-      <section className="relative px-4 py-20">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="relative p-12 overflow-hidden border shadow-2xl bg-[#161B22] backdrop-blur-2xl rounded-3xl border-white/10">
-            <div className="relative z-10">
-              <h2 className="mb-6 text-5xl font-bold text-white">
-                Event Information
-              </h2>
-
-              {/* Event Details Grid */}
-              <div className="grid grid-cols-2 gap-8 mb-12">
-                <div className="p-6 text-left border bg-[#1C2128] rounded-2xl border-white/10">
-                  <div className="flex items-center mb-4">
-                    <span className="mr-3 text-2xl">📅</span>
-                    <h3 className="text-xl font-bold text-white">
-                      Date & Time
-                    </h3>
-                  </div>
-                  <p className="text-gray-300">Date: T.B.A</p>
-                  <p className="text-gray-300">Time: T.B.A</p>
-                  <p className="text-gray-300">
-                    Duration: 30-45 minutes per team
-                  </p>
-                </div>
-
-                <div className="p-6 text-left border bg-[#1C2128] rounded-2xl border-white/10">
-                  <div className="flex items-center mb-4">
-                    <span className="mr-3 text-2xl">👥</span>
-                    <h3 className="text-xl font-bold text-white">
-                      Eligibility
-                    </h3>
-                  </div>
-                  <p className="text-gray-300">• Open to all students</p>
-                  <p className="text-gray-300">• Register in teams of 2</p>
-                  <p className="text-gray-300">• No prior experience needed</p>
-                </div>
-              </div>
-
-              <div className="max-w-2xl mx-auto mb-8">
-                <p className="mb-8 text-xl text-white/90">
-                  Join us for INFOTREK'25, the annual inter-departmental
-                  technical fest by ACM Student Chapter, Department of Computer
-                  Applications (MCA), NIT Trichy.
-                </p>
-                <div className="flex justify-center">
-                  <button
-                    onClick={() => {
-                      if (user) {
-                        navigate("/lobby");
-                      } else {
-                        navigate("/login");
-                      }
-                    }}
-                    className="px-8 py-4 text-lg font-semibold bg-[#7BFF66] text-[#0A0C10] rounded-xl hover:shadow-[#7BFF66]/25 hover:scale-105 transition-all duration-300"
-                  >
-                    {user ? "Enter Game Lobby" : "Register Now"} →
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Footer - Dark Theme */}
       <footer className="px-4 py-12 border-t border-white/10">
         <div className="max-w-6xl mx-auto">
@@ -360,9 +208,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
 
             <div className="text-center md:text-right">
               <p className="mb-2 text-gray-400">infotrek'25, ACM NITT</p>
-              <p className="text-sm text-gray-500">
-                Made with ❤️ for emoji lovers everywhere
-              </p>
             </div>
           </div>
         </div>

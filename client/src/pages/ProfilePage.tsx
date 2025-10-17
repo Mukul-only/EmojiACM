@@ -125,23 +125,11 @@ const ProfilePage = () => {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-2 gap-4 mt-6 md:grid-cols-4">
+                <div className="grid grid-cols-2 gap-4 mt-6">
                   <div className="p-4 transition-all rounded-xl bg-[#1C2128]/50 hover:bg-[#1C2128]/70">
                     <p className="text-sm text-gray-400">Games Played</p>
                     <p className="text-2xl font-bold text-[#7BFF66]">
                       {gamesPlayed}
-                    </p>
-                  </div>
-                  <div className="p-4 transition-all rounded-xl bg-[#1C2128]/50 hover:bg-[#1C2128]/70">
-                    <p className="text-sm text-gray-400">Total Score</p>
-                    <p className="text-2xl font-bold text-[#7BFF66]">
-                      {totalScore}
-                    </p>
-                  </div>
-                  <div className="p-4 transition-all rounded-xl bg-[#1C2128]/50 hover:bg-[#1C2128]/70">
-                    <p className="text-sm text-gray-400">Best Score</p>
-                    <p className="text-2xl font-bold text-[#7BFF66]">
-                      {bestScore}
                     </p>
                   </div>
                   <div className="p-4 transition-all rounded-xl bg-[#1C2128]/50 hover:bg-[#1C2128]/70">

@@ -4,7 +4,27 @@ import { socketService } from "../services/socket.service";
 import { useAuth } from "../hooks/useAuth";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import type { EmojiClickData } from "emoji-picker-react";
+import {
+  MdDelete,
+  MdDeleteSweep,
+  MdAddCircleOutline,
+  MdLocalMovies,
+  MdFlag,
+  MdPlayArrow,
+  MdClose,
+  MdMenu,
+  MdLightbulb,
+} from "react-icons/md";
 import GameOver from "../components/GameOver";
+import MoviePoster from "../components/MoviePoster";
+import { getMovieByTitle } from "../data/movies";
+import { getTMDBPosterUrl, searchMovie } from "../utils/tmdb";
+
+// Import rule images
+import rule1Image from "../assets/rules/rule1.png";
+import rule2Image from "../assets/rules/rule2.png";
+import rule3Image from "../assets/rules/rule3.png";
+import rule4Image from "../assets/rules/rule4.png";
 
 type PlayerRole = "guesser" | "clue-giver" | null;
 
@@ -13,7 +33,7 @@ interface GameState {
   timeLeft?: number;
   movieToGuess?: string;
   movieTitle?: string;
-  emojis?: string;
+  icons?: string[];
   message?: string;
   currentRound?: number;
   totalRounds?: number;
@@ -24,29 +44,53 @@ interface Guess {
   guess: string;
 }
 
-const TOTAL_ROUNDS = 25;
+const TOTAL_ROUNDS = 18;
 
-// New Timer component for the HUD
+// Enhanced Timer component with circular progress (supports 90 seconds)
 const HudTimer: React.FC<{ timeLeft: number }> = ({ timeLeft }) => {
-  const percentage = (timeLeft / 60) * 100;
-  const color = percentage > 50 ? "bg-green-500" : percentage > 25 ? "bg-yellow-500" : "bg-red-500";
+  const percentage = (timeLeft / 90) * 100;
+  const circumference = 2 * Math.PI * 20;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  const color =
+    percentage > 50 ? "#10b981" : percentage > 25 ? "#f59e0b" : "#ef4444";
 
   return (
-    <div className="w-24 h-full flex items-center justify-center">
-      <div className="w-full bg-white/10 rounded-full h-2.5">
-        <div
-          className={`h-2.5 rounded-full transition-all duration-500 ${color}`}
-          style={{ width: `${percentage}%` }}
-        ></div>
-      </div>
-      <span className="ml-3 font-mono text-lg font-bold">{timeLeft}s</span>
+    <div className="relative flex items-center justify-center">
+      <svg className="w-16 h-16 transform -rotate-90">
+        <circle
+          cx="32"
+          cy="32"
+          r="20"
+          stroke="rgba(255,255,255,0.1)"
+          strokeWidth="3"
+          fill="none"
+        />
+        <circle
+          cx="32"
+          cy="32"
+          r="20"
+          stroke={color}
+          strokeWidth="3"
+          fill="none"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          className="transition-all duration-500"
+          strokeLinecap="round"
+        />
+      </svg>
+      <span className="absolute font-mono text-lg font-bold">{timeLeft}s</span>
     </div>
   );
 };
 
-// New Guess History Log
-const GuessHistoryLog: React.FC<{ history: Guess[] }> = ({ history }) => {
+// Enhanced Guess History with animations and open/close functionality
+const GuessHistoryLog: React.FC<{
+  history: Guess[];
+  isRoundActive: boolean;
+}> = ({ history, isRoundActive }) => {
   const logRef = useRef<HTMLUListElement>(null);
+  const [isOpen, setIsOpen] = useState(true);
 
   useEffect(() => {
     if (logRef.current) {
@@ -54,16 +98,238 @@ const GuessHistoryLog: React.FC<{ history: Guess[] }> = ({ history }) => {
     }
   }, [history]);
 
+  // Hide when round ends
+  if (!isRoundActive || history.length === 0) return null;
+
   return (
-    <div className="absolute top-1/2 -translate-y-1/2 left-4 w-64 h-3/4 bg-black/30 backdrop-blur-sm rounded-lg p-3 overflow-hidden flex flex-col">
-      <h3 className="text-sm font-semibold text-white/50 border-b border-white/10 pb-2 mb-2">Guess History</h3>
-      <ul ref={logRef} className="flex-grow overflow-y-auto space-y-2 pr-2">
-        {history.map((item, index) => (
-          <li key={index} className="text-sm text-red-400/80 line-through bg-red-500/10 rounded-md px-2 py-1">
-            {item.guess}
-          </li>
-        ))}
-      </ul>
+    <>
+      {/* Toggle Button */}
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="fixed p-3 transition-all duration-200 border shadow-2xl top-28 left-6 rounded-xl bg-gray-900/95 backdrop-blur-xl border-white/10 hover:bg-gray-800/95 hover:scale-105"
+          title="Show Incorrect Guesses"
+        >
+          <MdMenu className="text-2xl text-white" />
+        </button>
+      )}
+
+      {/* Guess History Panel */}
+      {isOpen && (
+        <div className="fixed top-28 left-6 w-72 max-h-[60vh] overflow-hidden rounded-2xl bg-gray-900/95 backdrop-blur-xl border border-white/10 shadow-2xl animate-slideIn">
+          <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
+            <h3 className="text-sm font-semibold tracking-wide text-white/90">
+              INCORRECT GUESSES
+            </h3>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="p-1 transition-all duration-200 rounded-lg hover:bg-white/10"
+              title="Close"
+            >
+              <MdClose className="text-xl text-white/70 hover:text-white" />
+            </button>
+          </div>
+          <ul
+            ref={logRef}
+            className="p-4 space-y-2 overflow-y-auto max-h-96 custom-scrollbar"
+          >
+            {history.map((item, index) => (
+              <li
+                key={index}
+                className="px-3 py-2 text-sm font-medium text-red-300 line-through transition-all duration-200 border rounded-lg bg-red-500/10 border-red-500/20 animate-fadeIn"
+              >
+                {item.guess}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </>
+  );
+};
+
+// Enhanced Emoji Display with better styling and intelligent scrolling
+const EmojiDisplay: React.FC<{ icons: string[] }> = ({ icons }) => {
+  return (
+    <div className="w-full max-w-4xl mx-auto">
+      <div className="relative overflow-hidden border shadow-2xl bg-gray-800/80 backdrop-blur-xl rounded-3xl border-white/10">
+        <div className="p-8 max-h-[40vh] overflow-y-auto emoji-scrollbar">
+          {icons && icons.length > 0 ? (
+            <div className="flex flex-wrap items-center justify-center gap-4 min-h-[150px]">
+              {icons.map((icon, index) => (
+                <span
+                  key={index}
+                  className="text-6xl transition-transform duration-200 hover:scale-110 animate-fadeIn"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  {icon}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-32">
+              <p className="text-xl text-white/30 animate-pulse">
+                Waiting for clues...
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Rules Carousel Component
+const RulesCarousel: React.FC = () => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const rules = [
+    {
+      image: rule1Image,
+      title: "Team Size",
+      description: "2 players per team - team up for double the fun!",
+    },
+    {
+      image: rule2Image,
+      title: "Game Flow",
+      description: "One teammate sends emojis, the other guesses movie names.",
+    },
+    {
+      image: rule3Image,
+      title: "Time Limit",
+      description: "90 seconds per round to guess the movie!",
+    },
+    {
+      image: rule4Image,
+      title: "Core Rule",
+      description: "Only emojis allowed - no words, letters, or numbers!",
+    },
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % rules.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [rules.length]);
+
+  return (
+    <div className="w-full max-w-4xl mx-auto">
+      <div className="relative p-8 overflow-hidden border shadow-2xl bg-gray-800/50 backdrop-blur-2xl rounded-3xl border-white/10">
+        <h2 className="mb-6 text-3xl font-bold text-center text-transparent bg-gradient-to-r from-white to-[#7BFF66] bg-clip-text">
+          Game Rules
+        </h2>
+
+        {/* Carousel */}
+        <div className="relative h-80">
+          {rules.map((rule, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-all duration-500 ${
+                index === currentSlide
+                  ? "opacity-100 translate-x-0"
+                  : index < currentSlide
+                  ? "opacity-0 -translate-x-full"
+                  : "opacity-0 translate-x-full"
+              }`}
+            >
+              <div className="flex flex-col items-center justify-center h-full space-y-6">
+                <div className="relative w-48 h-48 overflow-hidden border-4 rounded-2xl border-[#7BFF66]/30">
+                  <img
+                    src={rule.image}
+                    alt={rule.title}
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+                <div className="text-center">
+                  <h3 className="mb-3 text-2xl font-bold text-white">
+                    {rule.title}
+                  </h3>
+                  <p className="max-w-md text-lg text-gray-300">
+                    {rule.description}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Dots Indicator */}
+        <div className="flex justify-center gap-2 mt-6">
+          {rules.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                index === currentSlide
+                  ? "bg-[#7BFF66] w-8"
+                  : "bg-white/30 hover:bg-white/50"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Auto-start Countdown Timer Component
+const AutoStartCountdown: React.FC<{ onStart: () => void }> = ({ onStart }) => {
+  const [countdown, setCountdown] = useState(10);
+
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else {
+      onStart();
+    }
+  }, [countdown, onStart]);
+
+  const percentage = (countdown / 10) * 100;
+  const circumference = 2 * Math.PI * 45;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <div className="flex flex-col items-center gap-6">
+      <div className="relative flex items-center justify-center">
+        <svg className="w-32 h-32 transform -rotate-90">
+          <circle
+            cx="64"
+            cy="64"
+            r="45"
+            stroke="rgba(255,255,255,0.1)"
+            strokeWidth="6"
+            fill="none"
+          />
+          <circle
+            cx="64"
+            cy="64"
+            r="45"
+            stroke="#7BFF66"
+            strokeWidth="6"
+            fill="none"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            className="transition-all duration-1000"
+            strokeLinecap="round"
+          />
+        </svg>
+        <div className="absolute text-center">
+          <div className="text-5xl font-bold text-[#7BFF66]">{countdown}</div>
+          <div className="text-sm text-white/60">seconds</div>
+        </div>
+      </div>
+      <p className="text-xl font-semibold text-white/90">
+        Next round starting...
+      </p>
+      <button
+        onClick={onStart}
+        className="flex items-center gap-2 px-8 py-3 text-lg font-semibold text-white transition-all duration-200 transform bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-green-500/50"
+      >
+        <MdPlayArrow className="text-2xl" />
+        <span>Start Now</span>
+      </button>
     </div>
   );
 };
@@ -80,7 +346,8 @@ const GamePage = () => {
   const [teamScore, setTeamScore] = useState<number>(0);
   const [isGameOver, setIsGameOver] = useState(false);
   const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showIconPicker, setShowIconPicker] = useState(false);
+  const [tmdbPosterUrl, setTmdbPosterUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token || !user) {
@@ -99,7 +366,7 @@ const GamePage = () => {
           else if (user._id === data.guesserId) setMyRole("guesser");
           setGameState({ ...data, isRoundActive: true, message: "" });
           setGuessHistory([]);
-          setShowEmojiPicker(false);
+          setShowIconPicker(false);
         });
 
         socket.on("round_end", (data) => {
@@ -130,8 +397,8 @@ const GamePage = () => {
         socket.on("timer_tick", ({ timeLeft }) =>
           setGameState((prev) => ({ ...prev, timeLeft }))
         );
-        socket.on("emoji_update", ({ emojis }) =>
-          setGameState((prev) => ({ ...prev, emojis }))
+        socket.on("icon_update", ({ icons }) =>
+          setGameState((prev) => ({ ...prev, icons }))
         );
         socket.on("error", ({ message }) => {
           setError(message);
@@ -149,12 +416,19 @@ const GamePage = () => {
   }, [navigate, token, user]);
 
   const handleStartRound = () => socketService.socket?.emit("start_round");
-  const handleEmojiClick = (emojiData: EmojiClickData) =>
-    socketService.socket?.emit("send_emoji", { emoji: emojiData.emoji });
-  const handleDeleteEmoji = () =>
-    socketService.socket?.emit("delete_last_emoji");
-  const handleClearEmojis = () =>
-    socketService.socket?.emit("clear_all_emojis");
+
+  // FIXED: Don't close picker after selecting emoji
+  const handleIconClick = (emojiData: EmojiClickData) => {
+    setGameState((prev) => ({
+      ...prev,
+      icons: [...(prev.icons || []), emojiData.emoji],
+    }));
+    socketService.socket?.emit("send_icon", { icon: emojiData.emoji });
+    // Removed setShowIconPicker(false) so modal stays open
+  };
+
+  const handleDeleteIcon = () => socketService.socket?.emit("delete_last_icon");
+  const handleClearIcons = () => socketService.socket?.emit("clear_all_icons");
   const handleGuess = (e: React.FormEvent) => {
     e.preventDefault();
     if (guess) {
@@ -170,10 +444,36 @@ const GamePage = () => {
     setShowForfeitConfirm(false);
   };
 
+  const movie = getMovieByTitle(gameState.movieTitle || "");
+
+  // Fetch TMDB poster when movie changes
+  useEffect(() => {
+    const fetchTMDBPoster = async () => {
+      if (movie && movie.tmdbId) {
+        // If movie has TMDB ID, search by title and year to get poster
+        const tmdbMovie = await searchMovie(movie.title, movie.year);
+        if (tmdbMovie && tmdbMovie.poster_path) {
+          setTmdbPosterUrl(getTMDBPosterUrl(tmdbMovie.poster_path, "w780"));
+        } else {
+          setTmdbPosterUrl(null);
+        }
+      } else {
+        setTmdbPosterUrl(null);
+      }
+    };
+
+    fetchTMDBPoster();
+  }, [movie]);
+
   if (!isConnected && !error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
-        <p className="text-lg text-cyan-400 animate-pulse">Connecting to Game...</p>
+      <div className="flex items-center justify-center min-h-screen bg-gray-950">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
+          <p className="text-xl font-semibold text-white animate-pulse">
+            Connecting to Game...
+          </p>
+        </div>
       </div>
     );
   }
@@ -184,41 +484,71 @@ const GamePage = () => {
 
   const renderActionArea = () => {
     if (!gameState.isRoundActive) {
+      // Show auto-start countdown if game has started (currentRound > 0)
+      if (gameState.currentRound && gameState.currentRound > 0) {
+        return <AutoStartCountdown onStart={handleStartRound} />;
+      }
+      // Show manual start button for first round
       return (
         <button
           onClick={handleStartRound}
-          className="w-full max-w-md py-4 font-bold text-gray-900 bg-green-400 rounded-xl text-xl hover:bg-green-300 transition-all duration-300 shadow-lg shadow-green-400/20"
+          className="relative flex items-center gap-3 px-12 py-4 overflow-hidden text-xl font-bold text-white transition-all duration-300 transform bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl hover:scale-105 hover:shadow-2xl hover:shadow-green-500/50 group"
         >
-          Start New Round
+          <MdPlayArrow className="text-3xl" />
+          <span className="relative z-10">Start Game</span>
+          <div className="absolute inset-0 transition-opacity duration-300 opacity-0 bg-gradient-to-r from-green-400 to-emerald-400 group-hover:opacity-100"></div>
         </button>
       );
     }
 
     if (myRole === "clue-giver") {
       return (
-        <div className="flex items-center gap-4">
-          <button onClick={() => setShowEmojiPicker(true)} className="px-6 py-3 font-semibold text-white bg-blue-500 rounded-xl hover:bg-blue-600 transition-colors">Add Emoji</button>
-          <button onClick={handleDeleteEmoji} className="px-6 py-3 font-semibold text-white bg-white/10 rounded-xl hover:bg-white/20 transition-colors">Delete Last</button>
-          <button onClick={handleClearEmojis} className="px-6 py-3 font-semibold text-white bg-red-500/80 rounded-xl hover:bg-red-600 transition-colors">Clear All</button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowIconPicker(true)}
+            className="flex items-center gap-2 px-8 py-3 font-semibold transition-all duration-200 transform border text-white/90 bg-gray-800/80 rounded-xl hover:bg-gray-700/80 hover:border-white/50 hover:scale-105 border-white/30"
+            title="Add Emoji"
+          >
+            <MdAddCircleOutline className="text-xl" />
+            <span>Add Emoji</span>
+          </button>
+          <button
+            onClick={handleDeleteIcon}
+            className="flex items-center gap-2 px-6 py-3 font-semibold transition-all duration-200 transform border text-white/90 bg-gray-800/80 rounded-xl hover:bg-gray-700/80 hover:border-white/50 hover:scale-105 border-white/30"
+            title="Delete Last Emoji"
+          >
+            <MdDelete className="text-xl" />
+            <span>Delete Last</span>
+          </button>
+          <button
+            onClick={handleClearIcons}
+            className="flex items-center gap-2 px-6 py-3 font-semibold transition-all duration-200 transform border text-white/90 bg-gray-800/80 rounded-xl hover:bg-gray-700/80 hover:border-white/50 hover:scale-105 border-white/30"
+            title="Clear All Emojis"
+          >
+            <MdDeleteSweep className="text-xl" />
+            <span>Clear All</span>
+          </button>
         </div>
       );
     }
 
     if (myRole === "guesser") {
       return (
-        <form onSubmit={handleGuess} className="w-full max-w-lg flex gap-2">
+        <form onSubmit={handleGuess} className="flex w-full max-w-2xl gap-3">
           <input
             value={guess}
             onChange={(e) => setGuess(e.target.value)}
-            placeholder="Guess the movie..."
-            className="w-full px-4 py-4 text-white bg-white/5 border-2 border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400/50 focus:border-green-400/50 transition-all"
+            placeholder="Type your movie guess..."
+            className="flex-1 px-6 py-4 text-lg text-white transition-all duration-200 border-2 bg-white/5 backdrop-blur-sm border-white/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-400/50 focus:border-green-400/50 placeholder:text-white/40"
+            autoFocus
           />
           <button
             type="submit"
-            className="px-8 py-4 font-bold text-gray-900 bg-green-400 rounded-xl hover:bg-green-300 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-8 py-4 text-lg font-semibold transition-all duration-200 transform border text-white/90 bg-gray-800/80 rounded-xl hover:bg-gray-700/80 hover:border-white/50 hover:scale-105 border-white/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             disabled={!guess.trim()}
           >
-            Submit
+            <MdLightbulb className="text-2xl" />
+            <span>Guess</span>
           </button>
         </form>
       );
@@ -228,90 +558,349 @@ const GamePage = () => {
   };
 
   return (
-    <div className="relative flex flex-col min-h-screen bg-gray-900 text-white font-sans overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-gray-900 via-gray-900 to-black"></div>
-      <div className="absolute top-1/4 left-0 w-72 h-72 bg-green-500/10 rounded-full filter blur-3xl animate-pulse"></div>
-      <div className="absolute bottom-1/4 right-0 w-72 h-72 bg-blue-500/10 rounded-full filter blur-3xl animate-pulse animation-delay-4000"></div>
-
+    <div className="relative flex flex-col h-screen overflow-hidden font-sans text-white bg-gray-950">
       {/* Forfeit Modal */}
       {showForfeitConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="p-8 space-y-6 text-center bg-gray-800 border border-red-500/30 rounded-2xl shadow-2xl max-w-sm mx-auto">
-            <h2 className="text-2xl font-bold text-red-400">Forfeit Game?</h2>
-            <p className="text-gray-300">
-              Are you sure you want to forfeit? Your team's score will be set to 0 and the game will end.
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md animate-fadeIn">
+          <div className="max-w-md p-8 mx-4 space-y-6 text-center bg-gray-900 border shadow-2xl border-red-500/30 rounded-3xl animate-scaleIn">
+            <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-full bg-red-500/20">
+              <span className="text-3xl">⚠️</span>
+            </div>
+            <h2 className="text-3xl font-bold text-red-400">Forfeit Game?</h2>
+            <p className="text-lg text-gray-300">
+              Your team's score will be set to 0 and the game will end
+              immediately.
             </p>
-            <div className="flex justify-center gap-4">
-              <button onClick={handleCancelForfeit} className="px-6 py-3 font-semibold text-white transition-colors duration-200 border border-white/20 rounded-xl bg-white/10 hover:bg-white/20">Cancel</button>
-              <button onClick={handleConfirmForfeit} className="px-6 py-3 font-semibold text-white transition-colors duration-200 bg-red-600 rounded-xl hover:bg-red-700">Confirm Forfeit</button>
+            <div className="flex justify-center gap-4 pt-4">
+              <button
+                onClick={handleCancelForfeit}
+                className="px-8 py-3 font-semibold text-white transition-all duration-200 transform border-2 border-white/30 rounded-xl bg-white/10 backdrop-blur-sm hover:bg-white/20 hover:scale-105"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmForfeit}
+                className="px-8 py-3 font-semibold text-white transition-all duration-200 transform bg-gradient-to-r from-red-600 to-red-700 rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-red-500/50"
+              >
+                Confirm Forfeit
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Emoji Picker Modal */}
-      {showEmojiPicker && (
-        <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/60 backdrop-blur-sm" onClick={() => setShowEmojiPicker(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="bg-gray-800 rounded-t-2xl">
-            <EmojiPicker onEmojiClick={handleEmojiClick} theme={Theme.DARK} height={350} width="100%" />
+      {/* FIXED: Emoji Picker Modal with Emoji Display */}
+      {showIconPicker && (
+        <div
+          className="fixed inset-0 z-40 flex flex-col items-center justify-end p-4 pb-6 bg-black/80 backdrop-blur-md animate-fadeIn"
+          onClick={() => setShowIconPicker(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-4xl flex flex-col gap-4 max-h-[calc(100vh-3rem)]"
+          >
+            {/* Current Emojis Display */}
+            <div className="flex-shrink-0 animate-slideDown">
+              <EmojiDisplay icons={gameState.icons || []} />
+            </div>
+
+            {/* Emoji Picker */}
+            <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-gray-900 rounded-2xl animate-slideUp">
+              <div className="flex items-center justify-between flex-shrink-0 p-4 border-b border-white/10">
+                <h3 className="text-lg font-semibold text-white">
+                  Choose Emojis
+                </h3>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteIcon();
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-all duration-200 border rounded-lg text-white/90 border-white/30 bg-gray-800/80 hover:bg-gray-700/80 hover:border-white/50 hover:scale-105"
+                    title="Delete Last Emoji"
+                  >
+                    <MdDelete className="text-lg" />
+                    <span>Delete Last</span>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleClearIcons();
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-all duration-200 border rounded-lg text-white/90 border-white/30 bg-gray-800/80 hover:bg-gray-700/80 hover:border-white/50 hover:scale-105"
+                    title="Clear All Emojis"
+                  >
+                    <MdDeleteSweep className="text-lg" />
+                    <span>Clear All</span>
+                  </button>
+                  <button
+                    onClick={() => setShowIconPicker(false)}
+                    className="px-4 py-2 text-sm font-semibold text-white transition-all duration-200 border rounded-lg border-white/20 bg-white/10 hover:bg-white/20"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 min-h-0">
+                <EmojiPicker
+                  onEmojiClick={handleIconClick}
+                  theme={Theme.DARK}
+                  height="100%"
+                  width="100%"
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {/* Top HUD */}
-      <header className="relative w-full px-6 h-20 flex items-center justify-between bg-black/20 backdrop-blur-md border-b border-white/10 z-10">
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold text-white">Emoji Guesser</h1>
-          <button onClick={handleForfeitRequest} className="px-3 py-1 text-xs font-semibold text-red-400 transition-colors duration-200 border border-red-500/30 rounded-lg bg-red-500/10 hover:bg-red-500/20" title="Forfeit Game">Forfeit</button>
+      <header className="relative z-10 flex items-center justify-between w-full px-8 py-4 border-b bg-gray-900/50 backdrop-blur-xl border-white/10">
+        <div className="flex items-center gap-6">
+          <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-white">
+            <MdLocalMovies className="text-3xl text-[#7BFF66]" />
+            <span>Emoji Guesser</span>
+          </h1>
+          <button
+            onClick={handleForfeitRequest}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-red-400 transition-all duration-200 border-2 rounded-lg border-red-500/30 bg-red-500/10 backdrop-blur-sm hover:bg-red-500/20 hover:scale-105"
+          >
+            <MdFlag className="text-lg" />
+            <span>Forfeit Game</span>
+          </button>
         </div>
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-10">
           <div className="text-center">
-            <p className="text-xs text-white/60">SCORE</p>
-            <p className="text-2xl font-bold text-green-400">{teamScore}</p>
+            <p className="text-xs font-semibold tracking-wider text-white/50">
+              ROUND
+            </p>
+            <p className="text-3xl font-bold">
+              {gameState.currentRound || 0}
+              <span className="text-xl text-white/30">
+                /{gameState.totalRounds || TOTAL_ROUNDS}
+              </span>
+            </p>
           </div>
-          <div className="text-center">
-            <p className="text-xs text-white/60">ROUND</p>
-            <p className="text-2xl font-bold">{gameState.currentRound || 0}<span className="text-white/30">/{gameState.totalRounds || TOTAL_ROUNDS}</span></p>
-          </div>
-          {gameState.isRoundActive && <HudTimer timeLeft={gameState.timeLeft ?? 60} />}
+          {gameState.isRoundActive && (
+            <HudTimer timeLeft={gameState.timeLeft ?? 90} />
+          )}
         </div>
       </header>
 
       {/* Main Game Board */}
-      <main className="relative flex-1 flex flex-col items-center justify-center p-4 space-y-8">
-        {myRole === 'clue-giver' && (
-          <div className="absolute top-4 text-center">
-            <p className="text-sm text-white/60">Your movie to describe:</p>
-            <p className="text-2xl font-bold text-yellow-400">{gameState.movieTitle}</p>
+      <main className="relative flex flex-col items-center flex-1 px-4 py-6 space-y-6 overflow-y-auto custom-scrollbar">
+        {/* Show Rules Carousel when game hasn't started */}
+        {!gameState.isRoundActive &&
+          (!gameState.currentRound || gameState.currentRound === 0) && (
+            <div className="w-full animate-fadeIn">
+              <RulesCarousel />
+            </div>
+          )}
+
+        {/* Role Badge */}
+        {myRole && (
+          <div
+            className={`px-6 py-2 rounded-full font-semibold text-sm backdrop-blur-sm border-2 ${
+              myRole === "clue-giver"
+                ? "bg-blue-500/20 border-blue-400/50 text-blue-300"
+                : "bg-green-500/20 border-green-400/50 text-green-300"
+            }`}
+          >
+            {myRole === "clue-giver" ? "🎨 Clue Giver" : "🔍 Guesser"}
           </div>
         )}
 
-        <div className="text-center">
-          <p className="font-mono text-3xl tracking-widest text-white/80 mb-4">
-            {myRole !== 'clue-giver' ? (gameState.movieToGuess ?? '...') : ' '}
-          </p>
-          <div className="w-full bg-black/20 p-8 rounded-xl min-h-[8rem] flex items-center justify-center border border-white/10">
-            <p className="text-7xl select-none tracking-wider">
-              {gameState.emojis || <span className="text-white/20">Waiting for clues...</span>}
+        {/* Clue Giver's Movie - Poster and Details Separately */}
+        {myRole === "clue-giver" && movie && (
+          <div className="w-full max-w-6xl px-4 animate-fadeIn">
+            <p className="mb-6 text-sm font-semibold tracking-wider text-center text-white/60">
+              YOUR MOVIE
+            </p>
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+              {/* Movie Poster */}
+              <div className="flex justify-center">
+                <div className="relative w-full max-w-sm overflow-hidden border shadow-2xl rounded-2xl border-white/20 bg-gradient-to-br from-slate-900 to-slate-800">
+                  <div className="relative aspect-[2/3] w-full">
+                    <img
+                      src={tmdbPosterUrl || movie.posterUrl}
+                      alt={`${movie.title} movie poster`}
+                      className="object-cover w-full h-full"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        // Fallback to local poster, then placeholder
+                        if (target.src !== movie.posterUrl) {
+                          target.src = movie.posterUrl;
+                        } else {
+                          target.src = `https://via.placeholder.com/300x450/1a1a1a/ffffff?text=${encodeURIComponent(
+                            movie.title
+                          )}`;
+                        }
+                      }}
+                    />
+                    {tmdbPosterUrl && (
+                      <div className="absolute px-2 py-1 text-xs font-semibold rounded-full top-2 right-2 bg-black/60 backdrop-blur-sm text-white/80">
+                        TMDB
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Movie Details */}
+              <div className="flex flex-col justify-center p-6 space-y-6 border bg-gray-800/50 backdrop-blur-xl rounded-2xl border-white/10">
+                <div>
+                  <h2 className="mb-2 text-4xl font-bold text-white">
+                    {movie.title}
+                  </h2>
+                  <div className="flex items-center gap-3 text-lg text-white/80">
+                    <span className="px-3 py-1 rounded-full bg-white/20">
+                      {movie.year}
+                    </span>
+                    <span
+                      className={`px-3 py-1 rounded-full ${
+                        movie.difficulty === "easy"
+                          ? "bg-green-500/20 text-green-400"
+                          : movie.difficulty === "medium"
+                          ? "bg-yellow-500/20 text-yellow-400"
+                          : "bg-red-500/20 text-red-400"
+                      }`}
+                    >
+                      {movie.difficulty.charAt(0).toUpperCase() +
+                        movie.difficulty.slice(1)}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold tracking-wider text-white/60">
+                    GENRES
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {movie.genre.map((genre, index) => (
+                      <span
+                        key={index}
+                        className="text-sm bg-[#7BFF66]/20 text-[#7BFF66] px-3 py-1 rounded-full font-medium"
+                      >
+                        {genre}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold tracking-wider text-white/60">
+                    DESCRIPTION
+                  </h3>
+                  <p className="text-base leading-relaxed text-white/80">
+                    {movie.description}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Emoji Display - SHOWN FOR BOTH ROLES */}
+        {gameState.isRoundActive && !showIconPicker && (
+          <div className="w-full max-w-4xl animate-fadeIn">
+            <EmojiDisplay icons={gameState.icons || []} />
+          </div>
+        )}
+
+        {/* Hidden Letters Display for Guesser */}
+        {myRole === "guesser" && gameState.isRoundActive && (
+          <div className="text-center animate-fadeIn">
+            <p className="mb-2 text-sm font-semibold tracking-wider text-white/60">
+              GUESS THE MOVIE
+            </p>
+            <p className="font-mono text-5xl font-bold tracking-widest text-white/90">
+              {gameState.movieToGuess ?? "..."}
             </p>
           </div>
-        </div>
+        )}
 
+        {/* Status Message */}
         {gameState.message && (
-          <div className="p-3 mt-4 text-center border rounded-xl bg-white/5 border-white/10">
-            <p className="text-lg font-medium text-white/80">{gameState.message}</p>
+          <div className="px-6 py-3 border-2 bg-white/5 backdrop-blur-sm border-white/20 rounded-2xl animate-fadeIn">
+            <p className="text-lg font-semibold text-white/90">
+              {gameState.message}
+            </p>
           </div>
         )}
       </main>
 
-      {/* Guess History Log */}
-      {guessHistory.length > 0 && <GuessHistoryLog history={guessHistory} />}
+      {/* Guess History */}
+      <GuessHistoryLog
+        history={guessHistory}
+        isRoundActive={gameState.isRoundActive || false}
+      />
 
       {/* Bottom Action Bar */}
-      <footer className="relative w-full h-24 flex items-center justify-center bg-black/20 backdrop-blur-md border-t border-white/10 z-10">
+      <footer className="relative z-10 flex items-center justify-center w-full py-6 border-t bg-gray-900/50 backdrop-blur-xl border-white/10">
         {renderActionArea()}
       </footer>
+
+      {/* Custom CSS for animations */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes slideUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes slideDown {
+          from { transform: translateY(-20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+        .animate-scaleIn {
+          animation: scaleIn 0.3s ease-out;
+        }
+        .animate-slideUp {
+          animation: slideUp 0.3s ease-out;
+        }
+        .animate-slideDown {
+          animation: slideDown 0.3s ease-out;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
+        .emoji-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .emoji-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 10px;
+          margin: 8px;
+        }
+        .emoji-scrollbar::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, rgba(123, 255, 102, 0.4), rgba(123, 255, 102, 0.6));
+          border-radius: 10px;
+          border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        .emoji-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(180deg, rgba(123, 255, 102, 0.6), rgba(123, 255, 102, 0.8));
+        }
+      `}</style>
     </div>
   );
 };

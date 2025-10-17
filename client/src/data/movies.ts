@@ -4,7 +4,9 @@ export interface Movie {
   posterUrl: string;
   year: number;
   genre: string[];
+  description: string;
   difficulty: "easy" | "medium" | "hard";
+  tmdbId?: number; // TMDB movie ID for fetching real posters
 }
 
 export const MOVIES: Movie[] = [
@@ -15,7 +17,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/matrix.jpg",
     year: 1999,
     genre: ["Action", "Sci-Fi"],
+    description: "A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers.",
     difficulty: "easy",
+    tmdbId: 603,
   },
   {
     id: "inception",
@@ -23,7 +27,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/inception.jpg",
     year: 2010,
     genre: ["Action", "Sci-Fi", "Thriller"],
+    description: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
     difficulty: "easy",
+    tmdbId: 27205,
   },
   {
     id: "titanic",
@@ -31,7 +37,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/titanic.jpg",
     year: 1997,
     genre: ["Drama", "Romance"],
+    description: "A seventeen-year-old aristocrat falls in love with a kind but poor artist aboard the luxurious, ill-fated R.M.S. Titanic.",
     difficulty: "easy",
+    tmdbId: 597,
   },
   {
     id: "lion-king",
@@ -39,7 +47,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/lion-king.jpg",
     year: 1994,
     genre: ["Animation", "Adventure", "Drama"],
+    description: "A young lion prince is cast out of his pride by his cruel uncle, who claims he killed his father, but later learns of his identity and his responsibilities.",
     difficulty: "easy",
+    tmdbId: 8587,
   },
   {
     id: "forrest-gump",
@@ -47,7 +57,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/forrest-gump.jpg",
     year: 1994,
     genre: ["Drama", "Romance"],
+    description: "The presidencies of Kennedy and Johnson, the Vietnam War, the Watergate scandal and other historical events unfold from the perspective of an Alabama man with an IQ of 75, whose only desire is to be reunited with his childhood sweetheart.",
     difficulty: "easy",
+    tmdbId: 13,
   },
   {
     id: "jaws",
@@ -55,7 +67,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/jaws.jpg",
     year: 1975,
     genre: ["Thriller", "Horror"],
+    description: "A giant man-eating great white shark attacks beachgoers on Amity Island, a fictional New England summer resort town, prompting police chief Martin Brody to hunt it with the help of a marine biologist and a professional shark hunter.",
     difficulty: "easy",
+    tmdbId: 578,
   },
   {
     id: "pulp-fiction",
@@ -63,7 +77,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/pulp-fiction.jpg",
     year: 1994,
     genre: ["Crime", "Drama"],
+    description: "The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.",
     difficulty: "easy",
+    tmdbId: 680,
   },
   {
     id: "godfather",
@@ -71,7 +87,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/godfather.jpg",
     year: 1972,
     genre: ["Crime", "Drama"],
+    description: "The aging patriarch of an organized crime dynasty transfers control of his clandestine empire to his reluctant son.",
     difficulty: "easy",
+    tmdbId: 238,
   },
 
   // Medium Movies
@@ -81,7 +99,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/avatar.jpg",
     year: 2009,
     genre: ["Action", "Adventure", "Fantasy"],
+    description: "A paraplegic marine dispatched to the moon Pandora on a unique mission becomes torn between following orders and protecting the world he feels is his home.",
     difficulty: "medium",
+    tmdbId: 19995,
   },
   {
     id: "interstellar",
@@ -89,7 +109,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/interstellar.jpg",
     year: 2014,
     genre: ["Adventure", "Drama", "Sci-Fi"],
+    description: "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
     difficulty: "medium",
+    tmdbId: 157336,
   },
   {
     id: "dark-knight",
@@ -97,7 +119,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/dark-knight.jpg",
     year: 2008,
     genre: ["Action", "Crime", "Drama"],
+    description: "When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.",
     difficulty: "medium",
+    tmdbId: 155,
   },
   {
     id: "avengers",
@@ -105,7 +129,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/avengers.jpg",
     year: 2012,
     genre: ["Action", "Adventure", "Sci-Fi"],
+    description: "Earth's mightiest heroes must come together and learn to fight as a team if they are going to stop the mischievous Loki and his alien army from enslaving humanity.",
     difficulty: "medium",
+    tmdbId: 24428,
   },
   {
     id: "frozen",
@@ -113,7 +139,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/frozen.jpg",
     year: 2013,
     genre: ["Animation", "Adventure", "Comedy"],
+    description: "When the newly crowned Queen Elsa accidentally uses her power to turn things into ice to curse her home in infinite winter, her sister Anna teams up with a mountain man, his playful reindeer, and a snowman to change the weather condition.",
     difficulty: "medium",
+    tmdbId: 109445,
   },
   {
     id: "toy-story",
@@ -121,7 +149,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/toy-story.jpg",
     year: 1995,
     genre: ["Animation", "Adventure", "Comedy"],
+    description: "A cowboy doll is profoundly threatened and jealous when a new spaceman figure supplants him as top toy in a boy's room.",
     difficulty: "medium",
+    tmdbId: 862,
   },
   {
     id: "star-wars",
@@ -129,7 +159,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/star-wars.jpg",
     year: 1977,
     genre: ["Action", "Adventure", "Fantasy"],
+    description: "Luke Skywalker joins forces with a Jedi Knight, a cocky pilot, a Wookiee and two droids to save the galaxy from the Empire's world-destroying battle station, while also attempting to rescue Princess Leia from the evil Darth Vader.",
     difficulty: "medium",
+    tmdbId: 11,
   },
   {
     id: "back-to-future",
@@ -137,7 +169,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/back-to-future.jpg",
     year: 1985,
     genre: ["Adventure", "Comedy", "Sci-Fi"],
+    description: "Marty McFly, a 17-year-old high school student, is accidentally sent thirty years into the past in a time-traveling DeLorean invented by his close friend, the eccentric scientist Doc Brown.",
     difficulty: "medium",
+    tmdbId: 105,
   },
 
   // Hard Movies
@@ -147,7 +181,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/citizen-kane.jpg",
     year: 1941,
     genre: ["Drama", "Mystery"],
+    description: "Following the death of publishing tycoon Charles Foster Kane, reporters scramble to uncover the meaning of his final utterance; 'Rosebud'.",
     difficulty: "hard",
+    tmdbId: 15,
   },
   {
     id: "casablanca",
@@ -155,7 +191,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/casablanca.jpg",
     year: 1942,
     genre: ["Drama", "Romance", "War"],
+    description: "A cynical American expatriate struggles to decide whether or not he should help his former lover and her fugitive husband escape French Morocco.",
     difficulty: "hard",
+    tmdbId: 289,
   },
   {
     id: "psycho",
@@ -163,7 +201,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/psycho.jpg",
     year: 1960,
     genre: ["Horror", "Mystery", "Thriller"],
+    description: "A Phoenix secretary embezzles forty thousand dollars from her employer's client, goes on the run, and checks into a remote motel run by a young man under the domination of his mother.",
     difficulty: "hard",
+    tmdbId: 539,
   },
   {
     id: "vertigo",
@@ -171,7 +211,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/vertigo.jpg",
     year: 1958,
     genre: ["Mystery", "Romance", "Thriller"],
+    description: "A former police detective juggles wrestling with his personal demons and becoming obsessed with a hauntingly beautiful woman.",
     difficulty: "hard",
+    tmdbId: 46,
   },
   {
     id: "sunset-boulevard",
@@ -179,7 +221,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/sunset-boulevard.jpg",
     year: 1950,
     genre: ["Drama", "Film-Noir"],
+    description: "A screenwriter is hired to rework a faded silent film star's script, only to find himself developing a dangerous relationship.",
     difficulty: "hard",
+    tmdbId: 599,
   },
   {
     id: "singin-in-rain",
@@ -187,7 +231,9 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/singin-in-rain.jpg",
     year: 1952,
     genre: ["Comedy", "Musical", "Romance"],
+    description: "A silent film production company and cast make a difficult transition to sound.",
     difficulty: "hard",
+    tmdbId: 872,
   },
 ];
 
@@ -203,8 +249,8 @@ export const getRandomMovie = (
   return filteredMovies[randomIndex];
 };
 
-export const getMovieById = (id: string): Movie | undefined => {
-  return MOVIES.find((movie) => movie.id === id);
+export const getMovieByTitle = (title: string): Movie | undefined => {
+  return MOVIES.find((movie) => movie.title === title);
 };
 
 export const getMoviesByDifficulty = (
