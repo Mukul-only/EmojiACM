@@ -1,6 +1,5 @@
 import React from "react";
 import { socketService } from "../services/socket.service";
-import Timer from "./Timer";
 import { MdSwapHoriz } from "react-icons/md";
 
 interface GameBoardProps {
@@ -20,7 +19,6 @@ interface GameBoardProps {
 const GameBoard: React.FC<GameBoardProps> = ({
   gameState,
   myRole,
-  onSubmitGuess,
   teamScore,
 }) => {
   const handleSwitchRoles = () => {
@@ -71,7 +69,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
       {/* Timer */}
       {gameState.isRoundActive && (
         <div className="w-full">
-          <Timer timeLeft={gameState.timeLeft || 0} />
+          {/* <Timer timeLeft={gameState.timeLeft || 0} /> */}
         </div>
       )}
 

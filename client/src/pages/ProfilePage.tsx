@@ -25,11 +25,22 @@ const ProfilePage = () => {
           // Then try to fetch game stats
           const statsResult = await getGameStats();
           setGameStats(statsResult);
-        } catch (statsError: any) {
-          console.error(
-            "Failed to fetch game stats:",
-            statsError.response?.data || statsError.message
-          );
+        } catch (statsError: unknown) {
+          if (statsError && typeof statsError === "object") {
+            const err = statsError as {
+              response?: { data?: unknown };
+              message?: string;
+            };
+            console.error(
+              "Failed to fetch game stats:",
+              err.response?.data ?? err.message ?? String(statsError)
+            );
+          } else {
+            console.error(
+              "Failed to fetch game stats:",
+              String(statsError)
+            );
+          }
           // Don't fail the whole profile load if just stats fail
           setGameStats({
             gamesPlayed: 0,
@@ -44,15 +55,23 @@ const ProfilePage = () => {
             recentGames: [],
           });
         }
-      } catch (error: any) {
-        console.error(
-          "Failed to fetch profile data:",
-          error.response?.data || error.message
-        );
-        // Handle authentication errors
-        if (error.response?.status === 401) {
-          // Redirect to login or handle unauthorized state
-          window.location.href = "/login";
+      } catch (error: unknown) {
+        if (error && typeof error === "object") {
+          const err = error as {
+            response?: { data?: unknown; status?: number };
+            message?: string;
+          };
+          console.error(
+            "Failed to fetch profile data:",
+            err.response?.data ?? err.message ?? String(error)
+          );
+          // Handle authentication errors
+          if (err.response?.status === 401) {
+            // Redirect to login or handle unauthorized state
+            window.location.href = "/login";
+          }
+        } else {
+          console.error("Failed to fetch profile data:", String(error));
         }
       }
     };
@@ -74,7 +93,6 @@ const ProfilePage = () => {
   const gamesPlayed = gameStats?.gamesPlayed || 0;
   const totalScore = gameStats?.totalScore || 0;
   const winRate = gameStats?.winRate || 0;
-  const bestScore = gameStats?.bestScore || 0;
 
   return (
     <Layout>

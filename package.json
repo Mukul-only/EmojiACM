@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"pnpm --filter server dev\" \"pnpm --filter client dev\"",
-    "build": "pnpm --filter server build && pnpm --filter client build"
+    "build": "pnpm --filter server build && pnpm --filter client build",
+    "preview": "vite preview"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

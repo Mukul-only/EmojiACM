@@ -4,6 +4,7 @@ import { socketService } from "../services/socket.service";
 import { useAuth } from "../hooks/useAuth";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import type { EmojiClickData } from "emoji-picker-react";
+import { Categories } from "emoji-picker-react";
 import {
   MdDelete,
   MdDeleteSweep,
@@ -16,7 +17,6 @@ import {
   MdLightbulb,
 } from "react-icons/md";
 import GameOver from "../components/GameOver";
-import MoviePoster from "../components/MoviePoster";
 // Import rule images
 import rule1Image from "../assets/rules/rule1.png";
 import rule2Image from "../assets/rules/rule2.png";
@@ -357,6 +357,8 @@ const GamePage = () => {
   const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
 
+  console.log(teamScore);
+
   useEffect(() => {
     if (!token || !user) {
       setError("User data is missing. Please log in again.");
@@ -403,7 +405,7 @@ const GamePage = () => {
           if (data.teamScore !== undefined) setTeamScore(data.teamScore);
         });
 
-        socket.on("game_over", (data) => {
+        socket.on("game_over", () => {
           setIsGameOver(true);
         });
 
@@ -659,35 +661,35 @@ const GamePage = () => {
                   width="100%"
                   categories={[
                     {
-                      category: "suggested",
+                      category: Categories.SMILEYS_PEOPLE,
                       name: "Recently Used",
                     },
                     {
-                      category: "smileys_people",
+                      category: Categories.SMILEYS_PEOPLE,
                       name: "Smileys & People",
                     },
                     {
-                      category: "animals_nature",
+                      category: Categories.ANIMALS_NATURE,
                       name: "Animals & Nature",
                     },
                     {
-                      category: "food_drink",
+                      category: Categories.FOOD_DRINK,
                       name: "Food & Drink",
                     },
                     {
-                      category: "travel_places",
+                      category: Categories.TRAVEL_PLACES,
                       name: "Travel & Places",
                     },
                     {
-                      category: "activities",
+                      category: Categories.ACTIVITIES,
                       name: "Activities",
                     },
                     {
-                      category: "objects",
+                      category: Categories.OBJECTS,
                       name: "Objects",
                     },
                     {
-                      category: "flags",
+                      category: Categories.FLAGS,
                       name: "Flags",
                     },
                   ]}
@@ -833,10 +835,10 @@ const GamePage = () => {
                           ctx.font = "24px sans-serif";
 
                           // Word wrap the movie title
-                          const words = gameState.movieData.title.split(" ");
+                          const words = gameState.movieData?.title.split(" ");
                           let line = "";
                           let y = canvas.height / 2 + 150;
-                          words.forEach((word) => {
+                          words?.forEach((word) => {
                             const testLine = line + word + " ";
                             const metrics = ctx.measureText(testLine);
                             if (metrics.width > canvas.width - 100) {
