@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { FaPlay } from "react-icons/fa";
 
 interface LandingPageProps {
-  user: any;
+  user: unknown;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
@@ -49,8 +49,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
               {/* Floating Badge - Apple Glass Effect */}
               <div className="inline-flex items-center px-6 py-3 border rounded-full shadow-2xl bg-white/10 backdrop-blur-xl border-white/20">
                 <div className="w-2 h-2 mr-3 rounded-full shadow-lg bg-emerald-400 animate-pulse shadow-emerald-400/50"></div>
-                <span className="text-sm font-medium text-white/90">
-                  Live & Interactive
+                <span className="text-base font-medium text-white/90">
+                  ACM Student Chapter NITT
                 </span>
               </div>
 
@@ -172,7 +172,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
                     <RuleCard
                       ruleNumber={3}
                       title="Time Limit"
-                      description="30-45 minutes per team, depending on rounds."
+                      description="30 minutes per team"
                       backgroundColor="bg-[#161B22]"
                       textColor="text-white"
                       emoji=""

@@ -206,7 +206,7 @@ const RulesCarousel: React.FC = () => {
     {
       image: rule3Image,
       title: "Time Limit",
-      description: "90 seconds per round to guess the movie!",
+      description: "120 seconds per round to guess the movie!",
     },
     {
       image: rule4Image,
