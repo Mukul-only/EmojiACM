@@ -1,6 +1,11 @@
 # Dependencies
 /node_modules
 /.pnpm-lock.yaml
+# Dependencies
+# Exclude Node.js dependencies
+server/node_modules/
+client/node_modules/
+server/dist/
 
 # Build Artifacts
 /dist
