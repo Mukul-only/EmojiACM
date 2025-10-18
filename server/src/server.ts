@@ -21,6 +21,7 @@ const io = new Server(server, {
     origin: config.clientOrigin,
     credentials: true,
   },
+  path: "/socket.io/",
 });
 
 // Middleware

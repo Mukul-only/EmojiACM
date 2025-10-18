@@ -24,6 +24,7 @@ const io = new socket_io_1.Server(server, {
         origin: config_1.default.clientOrigin,
         credentials: true,
     },
+    path: "/socket.io/",
 });
 // Middleware
 app.use((0, helmet_1.default)());
