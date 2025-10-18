@@ -657,6 +657,40 @@ const GamePage = () => {
                   theme={Theme.DARK}
                   height="100%"
                   width="100%"
+                  categories={[
+                    {
+                      category: "suggested",
+                      name: "Recently Used",
+                    },
+                    {
+                      category: "smileys_people",
+                      name: "Smileys & People",
+                    },
+                    {
+                      category: "animals_nature",
+                      name: "Animals & Nature",
+                    },
+                    {
+                      category: "food_drink",
+                      name: "Food & Drink",
+                    },
+                    {
+                      category: "travel_places",
+                      name: "Travel & Places",
+                    },
+                    {
+                      category: "activities",
+                      name: "Activities",
+                    },
+                    {
+                      category: "objects",
+                      name: "Objects",
+                    },
+                    {
+                      category: "flags",
+                      name: "Flags",
+                    },
+                  ]}
                 />
               </div>
             </div>
