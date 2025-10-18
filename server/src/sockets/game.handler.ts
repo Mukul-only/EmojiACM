@@ -5,7 +5,6 @@ import { Leaderboard } from "../models/leaderboard.model";
 import { GameHistory } from "../models/gameHistory.model";
 import { User } from "../models/user.model";
 import { getRandomMovie, resetUsedMovies } from "../data/movies";
-import type { Movie } from "../data/movies";
 
 const gameRooms: Map<string, any> = new Map();
 const lobbyRooms: Map<string, any> = new Map();
@@ -148,7 +147,7 @@ export const registerGameHandlers = (io: Server) => {
         return;
       }
 
-      const roomId = registration._id.toString();
+      const roomId = String((registration as any)._id);
       socket.join(roomId);
 
       // Store the mapping for reliable roomId retrieval
@@ -452,7 +451,7 @@ export const registerGameHandlers = (io: Server) => {
             rollNumber: { $in: registration.members },
           });
 
-          const roomId = registration._id.toString();
+          const roomId = String((registration as any)._id);
 
           // Ensure socket is in the room and mapping exists
           socket.join(roomId);
@@ -685,7 +684,7 @@ export const registerGameHandlers = (io: Server) => {
         const lobbyRoom = lobbyRooms.get(roomId);
         if (lobbyRoom && socket.user) {
           const updatedPlayers = lobbyRoom.players.map((p: any) =>
-            p.id === socket.user.id ? { ...p, isOnline: false } : p
+            p.id === socket.user?.id ? { ...p, isOnline: false } : p
           );
 
           const onlinePlayers = updatedPlayers.filter((p: any) => p.isOnline);
