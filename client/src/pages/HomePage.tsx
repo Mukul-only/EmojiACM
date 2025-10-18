@@ -65,10 +65,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
                 </h1>
 
                 <p className="max-w-lg text-xl leading-relaxed text-gray-300">
-                  Where emojis speak louder than words. Experience the future of
+                  Let your emojis do the talking and your talent do the winning
+                  at
                   <span className="font-semibold text-primary">
                     {" "}
-                    interactive gaming
+                    INFOTREK’25.
                   </span>
                   .
                 </p>
@@ -112,7 +113,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
               </div>
 
               {/* Stats - Dark Theme */}
-              <div className="flex items-center pt-8 space-x-8">
+              {/* <div className="flex items-center pt-8 space-x-8">
                 <div className="text-center">
                   <div className="text-3xl font-bold text-white">10K+</div>
                   <div className="text-sm text-gray-400">Active Players</div>
@@ -125,7 +126,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
                   <div className="text-3xl font-bold text-white">4.9★</div>
                   <div className="text-sm text-gray-400">User Rating</div>
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* Right Content - Rules - Apple Glass Container */}

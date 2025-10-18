@@ -1,21 +1,16 @@
-import { Schema, model, Document, Types } from "mongoose";
+import { Schema, model, Document } from "mongoose";
 
 export interface IRegistration extends Document {
   groupName: string;
-  members: string[]; // Array of roll numbers
+  members: string[];
 }
 
 const registrationSchema = new Schema<IRegistration>(
   {
-    groupName: { type: String, required: true },
-    members: [{ type: String, required: true }], // Store roll numbers directly
+    groupName: { type: String, required: true, trim: true },
+    members: { type: [String], required: true },
   },
-  // Second argument: The schema options
-  {
-    timestamps: true,
-    // --- THIS IS THE ADDED LINE ---
-    collection: "registrations", // Explicitly tell Mongoose to use this collection name
-  }
+  { timestamps: true }
 );
 
 export const Registration = model<IRegistration>(

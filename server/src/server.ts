@@ -10,6 +10,7 @@ import config from "./config";
 import authRoutes from "./routes/auth.routes";
 import gameRoutes from "./routes/game.routes";
 import movieRoutes from "./routes/movie.routes";
+import seedRoutes from "./routes/seed.routes";
 import { socketAuthMiddleware } from "./middleware/socket.auth.middleware";
 import { registerGameHandlers } from "./sockets/game.handler";
 
@@ -32,6 +33,10 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/game", gameRoutes);
 app.use("/api/movies", movieRoutes);
+app.use("/api/seed", seedRoutes);
+app.use("/", (req, res) => {
+  res.send({ success: "Yes" });
+});
 
 // Socket.IO
 io.of("/game").use(socketAuthMiddleware);

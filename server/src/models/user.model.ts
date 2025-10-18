@@ -11,6 +11,7 @@ export interface IUser extends Document {
   gamesPlayed?: number;
   totalScore?: number;
   achievements?: string[];
+  isAdmin?: boolean;
 }
 
 const userSchema = new Schema<IUser>(
@@ -20,19 +21,20 @@ const userSchema = new Schema<IUser>(
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, trim: true },
     rollNumber: { type: String, required: true, unique: true, trim: true },
-    teamName: { type: String, trim: true },
+    teamName: { type: String, trim: true, default: "info" },
     gamesPlayed: { type: Number, default: 0 },
     totalScore: { type: Number, default: 0 },
     achievements: { type: [String], default: [] },
+    isAdmin: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
-userSchema.pre("save", async function (next) {
-  if (this.isModified("password") && this.password) {
-    this.password = await hashPassword(this.password);
-  }
-  next();
-});
+// userSchema.pre("save", async function (next) {
+//   if (this.isModified("password") && this.password) {
+//     this.password = await hashPassword(this.password);
+//   }
+//   next();
+// });
 
 export const User = model<IUser>("User", userSchema);

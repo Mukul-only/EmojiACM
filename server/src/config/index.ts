@@ -12,6 +12,7 @@ dotenv.config();
 const config = {
   port: process.env.PORT || 4000,
   mongoUri: process.env.MONGO_URI as string,
+  mongoUriInfoTrek: process.env.MONGO_URI_InfoTrek as string,
   jwt: {
     secret: process.env.JWT_SECRET as string,
     expiresIn: process.env.JWT_EXPIRES_IN || "1h",

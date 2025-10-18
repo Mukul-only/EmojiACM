@@ -28,3 +28,15 @@ export const comparePassword = (
 ): Promise<boolean> => {
   return bcrypt.compare(plaintextPassword, hashedPassword);
 };
+
+// IIFE to generate a hash for "123" when the script is run directly with a specific argument.
+// This is useful for development/seeding without affecting the library functions.
+// To run: ts-node-dev --respawn src/utils/password.ts --generate-hash
+(async () => {
+  if (process.argv.includes("--generate-hash")) {
+    console.log('Generating hash for password: "123"');
+    const hashedPassword = await hashPassword("123");
+    console.log("Hashed password:", hashedPassword);
+    process.exit(0);
+  }
+})();
