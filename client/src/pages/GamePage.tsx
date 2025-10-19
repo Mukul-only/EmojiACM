@@ -15,6 +15,7 @@ import {
   MdClose,
   MdMenu,
   MdLightbulb,
+  MdHelpOutline,
 } from "react-icons/md";
 import GameOver from "../components/GameOver";
 // Import rule images
@@ -356,8 +357,10 @@ const GamePage = () => {
   const [isGameOver, setIsGameOver] = useState(false);
   const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
+  const [revealedLetters, setRevealedLetters] = useState<Set<number>>(new Set());
+  const [revealedLetterMap, setRevealedLetterMap] = useState<{[key: number]: string}>({});
 
-  console.log(teamScore);
+  void teamScore; // Used indirectly via setTeamScore
 
   useEffect(() => {
     if (!token || !user) {
@@ -383,6 +386,8 @@ const GamePage = () => {
           }));
           setGuessHistory([]);
           setShowIconPicker(false);
+          setRevealedLetters(new Set()); // Reset revealed letters for new round
+          setRevealedLetterMap({}); // Reset revealed letter map
         });
 
         socket.on("clue_giver_data", (data) => {
@@ -421,6 +426,24 @@ const GamePage = () => {
 
         socket.on("new_incorrect_guess", (data: Guess) => {
           setGuessHistory((prev) => [...prev, data]);
+        });
+
+        socket.on("word_revealed", (data: { movieToGuess: string; revealedWord: string; message: string }) => {
+          setGameState((prev) => ({ 
+            ...prev, 
+            movieToGuess: data.movieToGuess,
+            message: data.message 
+          }));
+          // Clear message after 3 seconds
+          setTimeout(() => {
+            setGameState((prev) => ({ ...prev, message: "" }));
+          }, 3000);
+        });
+        
+        socket.on("letters_revealed", (data: { revealedMap: {[key: number]: string} }) => {
+          setRevealedLetterMap((prev) => ({ ...prev, ...data.revealedMap }));
+          const newIndices = Object.keys(data.revealedMap).map(Number);
+          setRevealedLetters((prev) => new Set([...prev, ...newIndices]));
         });
 
         socket.on("timer_tick", ({ timeLeft }) =>
@@ -462,6 +485,20 @@ const GamePage = () => {
 
   const handleDeleteIcon = () => socketService.socket?.emit("delete_last_icon");
   const handleClearIcons = () => socketService.socket?.emit("clear_all_icons");
+  
+  const handleGuessChange = (value: string) => {
+    setGuess(value);
+    
+    // Always check for matching letters when guesser types
+    if (myRole === "guesser" && gameState.movieToGuess && gameState.isRoundActive) {
+      const inputLower = value.toLowerCase();
+      console.log('[Letter Reveal] Checking input:', inputLower);
+      
+      // Emit to server to check for matching letters
+      socketService.socket?.emit("check_letters", { input: inputLower });
+    }
+  };
+  
   const handleGuess = (e: React.FormEvent) => {
     e.preventDefault();
     if (guess) {
@@ -549,7 +586,7 @@ const GamePage = () => {
         <form onSubmit={handleGuess} className="flex w-full max-w-2xl gap-3">
           <input
             value={guess}
-            onChange={(e) => setGuess(e.target.value)}
+            onChange={(e) => handleGuessChange(e.target.value)}
             placeholder="Type your movie guess..."
             className="flex-1 px-6 py-4 text-lg text-white transition-all duration-200 border-2 bg-white/5 backdrop-blur-sm border-white/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-400/50 focus:border-green-400/50 placeholder:text-white/40"
             autoFocus
@@ -618,39 +655,52 @@ const GamePage = () => {
 
             {/* Emoji Picker */}
             <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-gray-900 rounded-2xl animate-slideUp">
-              <div className="flex items-center justify-between flex-shrink-0 p-4 border-b border-white/10">
-                <h3 className="text-lg font-semibold text-white">
-                  Choose Emojis
-                </h3>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteIcon();
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-all duration-200 border rounded-lg text-white/90 border-white/30 bg-gray-800/80 hover:bg-gray-700/80 hover:border-white/50 hover:scale-105"
-                    title="Delete Last Emoji"
-                  >
-                    <MdDelete className="text-lg" />
-                    <span>Delete Last</span>
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleClearIcons();
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-all duration-200 border rounded-lg text-white/90 border-white/30 bg-gray-800/80 hover:bg-gray-700/80 hover:border-white/50 hover:scale-105"
-                    title="Clear All Emojis"
-                  >
-                    <MdDeleteSweep className="text-lg" />
-                    <span>Clear All</span>
-                  </button>
-                  <button
-                    onClick={() => setShowIconPicker(false)}
-                    className="px-4 py-2 text-sm font-semibold text-white transition-all duration-200 border rounded-lg border-white/20 bg-white/10 hover:bg-white/20"
-                  >
-                    Done
-                  </button>
+              <div className="flex flex-col flex-shrink-0 p-4 border-b border-white/10 gap-3">
+               
+                
+                
+                {/* Controls Row */}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-white">
+                    Choose Emojis
+                  </h3>
+                  {gameState.movieData && (
+                  <div className="text-center px-4 py-2 bg-yellow-500/10 rounded-lg border border-yellow-500/40">
+                    <p className="text-sm font-semibold text-yellow-400 tracking-wide">
+                      {gameState.movieData.title}
+                    </p>
+                  </div>
+                )}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteIcon();
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-all duration-200 border rounded-lg text-white/90 border-white/30 bg-gray-800/80 hover:bg-gray-700/80 hover:border-white/50 hover:scale-105"
+                      title="Delete Last Emoji"
+                    >
+                      <MdDelete className="text-lg" />
+                      <span>Delete Last</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleClearIcons();
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-all duration-200 border rounded-lg text-white/90 border-white/30 bg-gray-800/80 hover:bg-gray-700/80 hover:border-white/50 hover:scale-105"
+                      title="Clear All Emojis"
+                    >
+                      <MdDeleteSweep className="text-lg" />
+                      <span>Clear All</span>
+                    </button>
+                    <button
+                      onClick={() => setShowIconPicker(false)}
+                      className="px-4 py-2 text-sm font-semibold text-white transition-all duration-200 border rounded-lg border-white/20 bg-white/10 hover:bg-white/20"
+                    >
+                      Done
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className="flex-1 min-h-0">
@@ -936,9 +986,40 @@ const GamePage = () => {
             <p className="mb-2 text-sm font-semibold tracking-wider text-white/60">
               GUESS THE MOVIE
             </p>
-            <p className="font-mono text-5xl font-bold tracking-widest text-white/90">
-              {gameState.movieToGuess ?? "..."}
-            </p>
+            <div className="flex flex-wrap items-center justify-center gap-4 max-w-4xl mx-auto">
+              {(() => {
+                const movieToGuess = gameState.movieToGuess ?? "...";
+                const words = movieToGuess.split(" ");
+                let globalIndex = 0;
+                
+                return words.map((word, wordIndex) => (
+                  <div key={wordIndex} className="flex items-center gap-1">
+                    {word.split("").map((char, charIndex) => {
+                      const currentIndex = globalIndex++;
+                      const isRevealed = revealedLetters.has(currentIndex);
+                      
+                      return (
+                        <span key={charIndex}>
+                          {char === "_" ? (
+                            isRevealed && revealedLetterMap[currentIndex] ? (
+                              <span className="text-3xl font-bold text-green-400 animate-fadeIn">
+                                {revealedLetterMap[currentIndex]}
+                              </span>
+                            ) : (
+                              <MdHelpOutline className="text-2xl text-purple-400/60" />
+                            )
+                          ) : (
+                            <span className="text-3xl font-bold text-white/90">
+                              {char}
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })}
+                  </div>
+                ));
+              })()}
+            </div>
           </div>
         )}
 

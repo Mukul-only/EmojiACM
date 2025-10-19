@@ -112,6 +112,9 @@ function initializeGameState(roomId: string, players: any[]) {
     totalRounds: TOTAL_ROUNDS,
     gameStartTime: Date.now(),
     gameId: `game_${roomId}_${Date.now()}`,
+    revealedWords: [], // Track which words have been revealed
+    revealedLetters: new Set(), // Track which letter indices have been revealed
+    maxRevealableLetters: 0, // 20% of total letters can be revealed
   });
 }
 
@@ -218,6 +221,11 @@ export const registerGameHandlers = (io: Server) => {
           room.currentMovieData = selectedMovie;
           room.currentIcons = [];
           room.timer = 120;
+          room.revealedWords = []; // Reset revealed words for new round
+          room.revealedLetters = new Set(); // Reset revealed letters
+          // Calculate 20% of total letters (excluding spaces)
+          const totalLetters = selectedMovie.title.replace(/ /g, "").length;
+          room.maxRevealableLetters = Math.ceil(totalLetters * 0.2);
 
           // Use existing roles instead of reassigning
           if (!room.clueGiverId || !room.guesserId) {
@@ -230,9 +238,10 @@ export const registerGameHandlers = (io: Server) => {
           gameNamespace.to(roomId).emit("round_start", {
             clueGiverId: room.clueGiverId,
             guesserId: room.guesserId,
-            movieToGuess: "🎬".repeat(
-              selectedMovie.title.replace(/ /g, "").length
-            ),
+            movieToGuess: selectedMovie.title
+              .split(" ")
+              .map((word) => "_".repeat(word.length))
+              .join(" "),
             currentRound: room.currentRound,
             totalRounds: room.totalRounds,
             isRoundActive: true,
@@ -353,6 +362,40 @@ export const registerGameHandlers = (io: Server) => {
         }
       });
 
+      socket.on("check_letters", ({ input }: { input: string }) => {
+        if (!socket.user) return;
+        const roomId = socketRoomMap.get(socket.id);
+        if (!roomId) return;
+
+        const room = gameRooms.get(roomId);
+        if (!room || !room.isRoundActive) return;
+        if (socket.user.id !== room.guesserId) return;
+
+        const movieTitleNoSpaces = room.currentMovie.replace(/ /g, "");
+        const movieTitleLower = movieTitleNoSpaces.toLowerCase();
+        const inputLower = input.replace(/ /g, "");
+        
+        // Check each character in input against movie title
+        const revealedMap: { [key: number]: string } = {};
+        for (let i = 0; i < inputLower.length; i++) {
+          const char = inputLower[i];
+          for (let j = 0; j < movieTitleLower.length; j++) {
+            if (movieTitleLower[j] === char && !room.revealedLetters.has(j)) {
+              // Only reveal if we haven't exceeded 10% limit
+              if (room.revealedLetters.size < room.maxRevealableLetters) {
+                room.revealedLetters.add(j);
+                revealedMap[j] = movieTitleNoSpaces[j]; // Store actual letter
+              }
+            }
+          }
+        }
+
+        // Send revealed map to guesser only (index -> letter)
+        socket.emit("letters_revealed", {
+          revealedMap: revealedMap,
+        });
+      });
+
       socket.on("submit_guess", ({ guess }: { guess: string }) => {
         if (!socket.user) return;
         const roomId = socketRoomMap.get(socket.id);
@@ -365,6 +408,7 @@ export const registerGameHandlers = (io: Server) => {
           });
         }
         if (room && room.isRoundActive) {
+          // Check if guess matches the full movie title
           if (
             guess.toLowerCase().trim() ===
             room.currentMovie.toLowerCase().trim()
@@ -395,6 +439,7 @@ export const registerGameHandlers = (io: Server) => {
             room.currentMovie = "";
             room.currentMovieData = null;
             room.currentIcons = [];
+            room.revealedWords = [];
 
             // First emit round_end
             gameNamespace.to(roomId).emit("round_end", {
@@ -411,11 +456,47 @@ export const registerGameHandlers = (io: Server) => {
               message: "Roles have been switched for the next round! 🔄",
             });
           } else {
-            socket.emit("guess_result", { correct: false });
-            gameNamespace.to(roomId).emit("new_incorrect_guess", {
-              guesserName: socket.user.username,
-              guess: guess,
+            // Check if the guess matches any word in the movie title
+            const movieWords = room.currentMovie.toLowerCase().split(" ");
+            const guessLower = guess.toLowerCase().trim();
+            
+            let wordRevealed = false;
+            movieWords.forEach((word: string, index: number) => {
+              if (word === guessLower && !room.revealedWords.includes(index)) {
+                // 25% chance (1 in 4) to reveal the word
+                const shouldReveal = Math.random() < 0.25;
+                
+                if (shouldReveal) {
+                  room.revealedWords.push(index);
+                  wordRevealed = true;
+                  
+                  // Generate updated movieToGuess with revealed words
+                  const updatedMovieToGuess = room.currentMovie
+                    .split(" ")
+                    .map((word: string, idx: number) => 
+                      room.revealedWords.includes(idx) 
+                        ? word 
+                        : "_".repeat(word.length)
+                    )
+                    .join(" ");
+                  
+                  // Emit word reveal update
+                  gameNamespace.to(roomId).emit("word_revealed", {
+                    movieToGuess: updatedMovieToGuess,
+                    revealedWord: word,
+                    message: `Lucky! The word "${room.currentMovie.split(" ")[index]}" has been revealed! 🎉`,
+                  });
+                }
+              }
             });
+            
+            if (!wordRevealed) {
+              socket.emit("guess_result", { correct: false });
+              gameNamespace.to(roomId).emit("new_incorrect_guess", {
+                guesserName: socket.user.username,
+                guess: guess,
+              });
+            }
           }
         }
       });

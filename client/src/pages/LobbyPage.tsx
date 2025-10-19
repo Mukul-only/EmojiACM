@@ -193,7 +193,7 @@ const LobbyPage = () => {
 
   return (
     <Layout>
-      <div className="min-h-[calc(100vh-5rem)] w-full flex flex-col items-center justify-center px-4 py-8">
+      <div className="min-h-[calc(100vh-5rem)] w-full flex flex-col mt-24  items-center justify-center px-4 py-8">
         <div className="w-full max-w-4xl">
           <div className="relative p-8 bg-[#161B22]/70 backdrop-blur-xl rounded-3xl shadow-2xl">
             <div className="absolute inset-0 bg-gradient-to-br from-[#7BFF66]/5 via-transparent to-purple-500/5 rounded-3xl"></div>
