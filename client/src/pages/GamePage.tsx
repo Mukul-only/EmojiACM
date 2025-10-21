@@ -55,13 +55,16 @@ interface Guess {
 
 const TOTAL_ROUNDS = 14;
 
-// Enhanced Timer component with circular progress (supports 120 seconds)
-const HudTimer: React.FC<{ timeLeft: number }> = ({ timeLeft }) => {
-  const percentage = (timeLeft / 120) * 100;
+// Enhanced Timer component with circular progress
+const HudTimer: React.FC<{ timeLeft: number; totalTime: number }> = ({
+  timeLeft,
+  totalTime,
+}) => {
+  const percentage = (timeLeft / totalTime) * 100;
   const circumference = 2 * Math.PI * 20;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
-  // Updated color thresholds for 120 seconds
+  // Updated color thresholds for 90 seconds
   const color =
     percentage > 50 ? "#10b981" : percentage > 25 ? "#f59e0b" : "#ef4444";
 
@@ -207,7 +210,7 @@ const RulesCarousel: React.FC = () => {
     {
       image: rule3Image,
       title: "Time Limit",
-      description: "120 seconds per round to guess the movie!",
+      description: "90 seconds per round to guess the movie!",
     },
     {
       image: rule4Image,
@@ -835,7 +838,7 @@ const GamePage = () => {
             </p>
           </div>
           {gameState.isRoundActive && (
-            <HudTimer timeLeft={gameState.timeLeft ?? 90} />
+            <HudTimer timeLeft={gameState.timeLeft ?? 90} totalTime={90} />
           )}
         </div>
       </header>

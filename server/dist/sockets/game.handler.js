@@ -83,7 +83,7 @@ function initializeGameState(roomId, players) {
         currentIcons: [],
         guesserId: guesser.id,
         clueGiverId: clueGiver.id,
-        timer: 120,
+        timer: 90,
         isRoundActive: false,
         timerId: null,
         currentRound: 0,
@@ -178,7 +178,7 @@ const registerGameHandlers = (io) => {
                     room.currentMovie = selectedMovie.title;
                     room.currentMovieData = selectedMovie;
                     room.currentIcons = [];
-                    room.timer = 120;
+                    room.timer = 90;
                     room.revealedWords = []; // Reset revealed words for new round
                     room.revealedLetters = new Set(); // Reset revealed letters
                     // Calculate 20% of total letters (excluding spaces)
@@ -201,7 +201,7 @@ const registerGameHandlers = (io) => {
                         currentRound: room.currentRound,
                         totalRounds: room.totalRounds,
                         isRoundActive: true,
-                        timeLeft: 120,
+                        timeLeft: 90,
                     });
                     // Send additional movie data only to clue giver using the room
                     const clueGiverSocket = Array.from(gameNamespace.sockets.values()).find((s) => s.user?.id === room.clueGiverId);
