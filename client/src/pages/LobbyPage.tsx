@@ -3,7 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { socketService } from "../services/socket.service";
 import Layout from "../components/Layout";
 import { useAuth } from "../hooks/useAuth";
-import { FaUser } from "react-icons/fa";
+import {
+  FaUser,
+  FaUsers,
+  FaIdCard,
+  FaGamepad,
+  FaDoorOpen,
+} from "react-icons/fa";
+import { MdGroups, MdTimer, MdPlayArrow } from "react-icons/md";
+import { GiTeamIdea } from "react-icons/gi";
+import { IoMdCheckmarkCircle } from "react-icons/io";
 
 interface Player {
   id: string;
@@ -205,17 +214,21 @@ const LobbyPage = () => {
               )}
               <div className="space-y-4 text-center">
                 <h1 className="text-4xl font-bold text-transparent bg-gradient-to-r from-white to-white/90 bg-clip-text">
-                  Team Lobby
+                  <div className="flex items-center justify-center gap-3">
+                    <GiTeamIdea className="text-4xl text-[#7BFF66]" />
+                    <span>Team Lobby</span>
+                  </div>
                 </h1>
                 <div className="space-y-2">
                   <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/5">
-                    <div className="w-2 h-2 bg-[#7BFF66] rounded-full mr-2 animate-pulse"></div>
+                    <MdGroups className="mr-2 text-[#7BFF66]" />
                     <span className="text-sm text-white/80">
                       Team:{" "}
                       {lobbyState.teamName || user?.teamName || "Waiting..."}
                     </span>
                   </div>
                   <div className="text-sm text-white/60">
+                    <FaIdCard className="inline mr-2" />
                     Room ID: {lobbyState.roomId}
                   </div>
                 </div>
@@ -261,7 +274,7 @@ const LobbyPage = () => {
                         </p>
                         {currentPlayer?.isOnline && (
                           <div className="flex items-center justify-center gap-1">
-                            <div className="w-2 h-2 bg-[#7BFF66] rounded-full"></div>
+                            <IoMdCheckmarkCircle className="text-[#7BFF66]" />
                             <p className="text-sm text-[#7BFF66]">Ready</p>
                           </div>
                         )}
@@ -302,7 +315,7 @@ const LobbyPage = () => {
                         </p>
                         {otherPlayer?.isOnline && (
                           <div className="flex items-center justify-center gap-1">
-                            <div className="w-2 h-2 bg-[#7BFF66] rounded-full"></div>
+                            <IoMdCheckmarkCircle className="text-[#7BFF66]" />
                             <p className="text-sm text-[#7BFF66]">Ready</p>
                           </div>
                         )}
@@ -314,28 +327,43 @@ const LobbyPage = () => {
 
               {/* Game Controls */}
               <div className="flex flex-col justify-center gap-4 sm:flex-row">
-                {lobbyState.canStartGame && (
+                {lobbyState.isHost && lobbyState.canStartGame && (
                   <button
                     onClick={handleStartGame}
-                    className="px-8 py-4 font-bold text-[#0A0C10] bg-[#7BFF66] rounded-xl hover:shadow-lg hover:shadow-[#7BFF66]/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+                    className="px-8 py-4 font-bold text-[#0A0C10] bg-[#7BFF66] rounded-xl hover:shadow-lg hover:shadow-[#7BFF66]/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center gap-2"
                   >
-                    Start Game
+                    <MdPlayArrow className="text-2xl" />
+                    <span>Start Game</span>
                   </button>
                 )}
                 <button
                   onClick={handleLeaveLobby}
-                  className="px-8 py-4 font-bold text-white transition-all duration-300 bg-white/10 rounded-xl hover:bg-white/20"
+                  className="px-8 py-4 font-bold text-white transition-all duration-300 bg-white/10 rounded-xl hover:bg-white/20 flex items-center gap-2"
                 >
-                  Leave Lobby
+                  <FaDoorOpen className="text-xl" />
+                  <span>Leave Lobby</span>
                 </button>
               </div>
 
               {/* Status Message */}
               <div className="text-center">
                 {lobbyState.players.length === 2 ? (
-                  <p className="text-lg text-[#7BFF66]">Ready to start!</p>
+                  lobbyState.isHost ? (
+                    <p className="text-lg text-[#7BFF66] flex items-center justify-center gap-2">
+                      <FaGamepad className="text-[#7BFF66]" />
+                      Ready to start!
+                    </p>
+                  ) : (
+                    <p className="text-lg text-[#7BFF66] flex items-center justify-center gap-2">
+                      <FaUsers className="text-[#7BFF66]" />
+                      {lobbyState.players[0]?.name ||
+                        lobbyState.players[0]?.username}{" "}
+                      will start the game
+                    </p>
+                  )
                 ) : (
-                  <p className="text-lg text-white/60">
+                  <p className="text-lg text-white/60 flex items-center justify-center gap-2">
+                    <MdTimer className="text-white/60" />
                     Waiting for your teammate...
                   </p>
                 )}

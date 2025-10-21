@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useBlocker } from "react-router-dom";
 import { socketService } from "../services/socket.service";
 import { useAuth } from "../hooks/useAuth";
 import EmojiPicker, { Theme } from "emoji-picker-react";
@@ -285,7 +285,7 @@ const RulesCarousel: React.FC = () => {
 
 // Auto-start Countdown Timer Component
 const AutoStartCountdown: React.FC<{ onStart: () => void }> = ({ onStart }) => {
-  const [countdown, setCountdown] = useState(10);
+  const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
     if (countdown > 0) {
@@ -296,7 +296,7 @@ const AutoStartCountdown: React.FC<{ onStart: () => void }> = ({ onStart }) => {
     }
   }, [countdown, onStart]);
 
-  const percentage = (countdown / 10) * 100;
+  const percentage = (countdown / 5) * 100;
   const circumference = 2 * Math.PI * 45;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
@@ -333,13 +333,6 @@ const AutoStartCountdown: React.FC<{ onStart: () => void }> = ({ onStart }) => {
       <p className="text-xl font-semibold text-white/90">
         Next round starting...
       </p>
-      <button
-        onClick={onStart}
-        className="flex items-center gap-2 px-8 py-3 text-lg font-semibold text-white transition-all duration-200 transform bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-green-500/50"
-      >
-        <MdPlayArrow className="text-2xl" />
-        <span>Start Now</span>
-      </button>
     </div>
   );
 };
@@ -357,10 +350,18 @@ const GamePage = () => {
   const [isGameOver, setIsGameOver] = useState(false);
   const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
-  const [revealedLetters, setRevealedLetters] = useState<Set<number>>(new Set());
-  const [revealedLetterMap, setRevealedLetterMap] = useState<{[key: number]: string}>({});
+  const [revealedLetters, setRevealedLetters] = useState<Set<number>>(
+    new Set()
+  );
+  const [revealedLetterMap, setRevealedLetterMap] = useState<{
+    [key: number]: string;
+  }>({});
 
   void teamScore; // Used indirectly via setTeamScore
+
+  // Warn on leaving the page (reload/close/back) during an active round
+  const shouldWarnOnLeave = Boolean(gameState.isRoundActive && !isGameOver);
+  const blocker = useBlocker(shouldWarnOnLeave);
 
   useEffect(() => {
     if (!token || !user) {
@@ -428,23 +429,33 @@ const GamePage = () => {
           setGuessHistory((prev) => [...prev, data]);
         });
 
-        socket.on("word_revealed", (data: { movieToGuess: string; revealedWord: string; message: string }) => {
-          setGameState((prev) => ({ 
-            ...prev, 
-            movieToGuess: data.movieToGuess,
-            message: data.message 
-          }));
-          // Clear message after 3 seconds
-          setTimeout(() => {
-            setGameState((prev) => ({ ...prev, message: "" }));
-          }, 3000);
-        });
-        
-        socket.on("letters_revealed", (data: { revealedMap: {[key: number]: string} }) => {
-          setRevealedLetterMap((prev) => ({ ...prev, ...data.revealedMap }));
-          const newIndices = Object.keys(data.revealedMap).map(Number);
-          setRevealedLetters((prev) => new Set([...prev, ...newIndices]));
-        });
+        socket.on(
+          "word_revealed",
+          (data: {
+            movieToGuess: string;
+            revealedWord: string;
+            message: string;
+          }) => {
+            setGameState((prev) => ({
+              ...prev,
+              movieToGuess: data.movieToGuess,
+              message: data.message,
+            }));
+            // Clear message after 3 seconds
+            setTimeout(() => {
+              setGameState((prev) => ({ ...prev, message: "" }));
+            }, 3000);
+          }
+        );
+
+        socket.on(
+          "letters_revealed",
+          (data: { revealedMap: { [key: number]: string } }) => {
+            setRevealedLetterMap((prev) => ({ ...prev, ...data.revealedMap }));
+            const newIndices = Object.keys(data.revealedMap).map(Number);
+            setRevealedLetters((prev) => new Set([...prev, ...newIndices]));
+          }
+        );
 
         socket.on("timer_tick", ({ timeLeft }) =>
           setGameState((prev) => ({ ...prev, timeLeft }))
@@ -471,6 +482,21 @@ const GamePage = () => {
     };
   }, [navigate, token, user]);
 
+  // Warn on page reload/close during an active round
+  useEffect(() => {
+    if (!shouldWarnOnLeave) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Modern browsers show a generic message, but setting returnValue triggers the prompt
+      e.preventDefault();
+      e.returnValue =
+        "You are in an active game. Leaving or reloading will end the round and your progress will be lost.";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [shouldWarnOnLeave]);
+
   const handleStartRound = () => socketService.socket?.emit("start_round");
 
   // FIXED: Don't close picker after selecting emoji
@@ -485,20 +511,24 @@ const GamePage = () => {
 
   const handleDeleteIcon = () => socketService.socket?.emit("delete_last_icon");
   const handleClearIcons = () => socketService.socket?.emit("clear_all_icons");
-  
+
   const handleGuessChange = (value: string) => {
     setGuess(value);
-    
+
     // Always check for matching letters when guesser types
-    if (myRole === "guesser" && gameState.movieToGuess && gameState.isRoundActive) {
+    if (
+      myRole === "guesser" &&
+      gameState.movieToGuess &&
+      gameState.isRoundActive
+    ) {
       const inputLower = value.toLowerCase();
-      console.log('[Letter Reveal] Checking input:', inputLower);
-      
+      console.log("[Letter Reveal] Checking input:", inputLower);
+
       // Emit to server to check for matching letters
       socketService.socket?.emit("check_letters", { input: inputLower });
     }
   };
-  
+
   const handleGuess = (e: React.FormEvent) => {
     e.preventDefault();
     if (guess) {
@@ -608,6 +638,36 @@ const GamePage = () => {
 
   return (
     <div className="relative flex flex-col h-screen overflow-hidden font-sans text-white bg-gray-950">
+      {/* Leave Confirmation Modal (for back navigation) */}
+      {blocker.state === "blocked" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md animate-fadeIn">
+          <div className="max-w-md p-8 mx-4 space-y-6 text-center bg-gray-900 border shadow-2xl border-yellow-500/30 rounded-3xl animate-scaleIn">
+            <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-full bg-yellow-500/20">
+              <span className="text-3xl">👋</span>
+            </div>
+            <h2 className="text-3xl font-bold text-yellow-400">Leave Game?</h2>
+            <p className="text-lg text-gray-300">
+              Are you sure you want to leave? Your current round's progress will
+              be lost.
+            </p>
+            <div className="flex justify-center gap-4 pt-4">
+              <button
+                onClick={() => blocker.reset?.()}
+                className="px-8 py-3 font-semibold text-white transition-all duration-200 transform border-2 border-white/30 rounded-xl bg-white/10 backdrop-blur-sm hover:bg-white/20 hover:scale-105"
+              >
+                Stay
+              </button>
+              <button
+                onClick={() => blocker.proceed?.()}
+                className="px-8 py-3 font-semibold text-white transition-all duration-200 transform bg-gradient-to-r from-yellow-600 to-yellow-700 rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-yellow-500/50"
+              >
+                Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Forfeit Modal */}
       {showForfeitConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md animate-fadeIn">
@@ -656,21 +716,18 @@ const GamePage = () => {
             {/* Emoji Picker */}
             <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-gray-900 rounded-2xl animate-slideUp">
               <div className="flex flex-col flex-shrink-0 p-4 border-b border-white/10 gap-3">
-               
-                
-                
                 {/* Controls Row */}
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-white">
                     Choose Emojis
                   </h3>
                   {gameState.movieData && (
-                  <div className="text-center px-4 py-2 bg-yellow-500/10 rounded-lg border border-yellow-500/40">
-                    <p className="text-sm font-semibold text-yellow-400 tracking-wide">
-                      {gameState.movieData.title}
-                    </p>
-                  </div>
-                )}
+                    <div className="text-center px-4 py-2 bg-yellow-500/10 rounded-lg border border-yellow-500/40">
+                      <p className="text-sm font-semibold text-yellow-400 tracking-wide">
+                        {gameState.movieData.title}
+                      </p>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <button
                       onClick={(e) => {
@@ -991,13 +1048,13 @@ const GamePage = () => {
                 const movieToGuess = gameState.movieToGuess ?? "...";
                 const words = movieToGuess.split(" ");
                 let globalIndex = 0;
-                
+
                 return words.map((word, wordIndex) => (
                   <div key={wordIndex} className="flex items-center gap-1">
                     {word.split("").map((char, charIndex) => {
                       const currentIndex = globalIndex++;
                       const isRevealed = revealedLetters.has(currentIndex);
-                      
+
                       return (
                         <span key={charIndex}>
                           {char === "_" ? (

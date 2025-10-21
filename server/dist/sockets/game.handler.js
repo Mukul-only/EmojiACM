@@ -492,13 +492,28 @@ const registerGameHandlers = (io) => {
                         socketRoomSize: connectedSockets?.size || 0,
                         currentPlayer: socket.user.username,
                     });
-                    gameNamespace.to(roomId).emit("lobby_update", {
-                        players: updatedPlayers,
-                        roomId: roomId,
-                        isHost: updatedPlayers[0]?.id === socket.user.id,
-                        canStartGame: (connectedSockets?.size || 0) === 2,
-                        teamName: registration.groupName,
-                    });
+                    // Send lobby update to all players in the room
+                    const currentConnectedSockets = gameNamespace.adapter.rooms.get(roomId);
+                    const currentOnlineUserIds = new Set(Array.from(currentConnectedSockets || [])
+                        .map((socketId) => {
+                        const socket = gameNamespace.sockets.get(socketId);
+                        return socket?.user?.id;
+                    })
+                        .filter((id) => id));
+                    // Send individual lobby updates to each player with their correct host status
+                    for (const playerId of currentOnlineUserIds) {
+                        const playerSocket = Array.from(gameNamespace.sockets.values()).find((s) => s.user?.id === playerId);
+                        if (playerSocket) {
+                            const isHost = updatedPlayers[0]?.id === playerId;
+                            playerSocket.emit("lobby_update", {
+                                players: updatedPlayers,
+                                roomId: roomId,
+                                teamName: registration.groupName,
+                                isHost: isHost,
+                                canStartGame: currentOnlineUserIds.size === 2,
+                            });
+                        }
+                    }
                 }
                 catch (error) {
                     console.error("Error in join_lobby:", error);
@@ -608,13 +623,28 @@ const registerGameHandlers = (io) => {
                         else {
                             lobbyRoom.players = updatedPlayers;
                             lobbyRooms.set(roomId, lobbyRoom);
-                            gameNamespace.to(roomId).emit("lobby_update", {
-                                players: updatedPlayers,
-                                roomId: roomId,
-                                teamName: registration.groupName,
-                                isHost: updatedPlayers[0]?.id === onlinePlayers[0]?.id,
-                                canStartGame: onlinePlayers.length === 2,
-                            });
+                            // Send individual lobby updates to each player with their correct host status
+                            const connectedSockets = gameNamespace.adapter.rooms.get(roomId);
+                            const onlineUserIds = new Set(Array.from(connectedSockets || [])
+                                .map((socketId) => {
+                                const socket = gameNamespace.sockets.get(socketId);
+                                return socket?.user?.id;
+                            })
+                                .filter((id) => id));
+                            // Send individual lobby updates to each player with their correct host status
+                            for (const playerId of onlineUserIds) {
+                                const playerSocket = Array.from(gameNamespace.sockets.values()).find((s) => s.user?.id === playerId);
+                                if (playerSocket) {
+                                    const isHost = updatedPlayers[0]?.id === playerId;
+                                    playerSocket.emit("lobby_update", {
+                                        players: updatedPlayers,
+                                        roomId: roomId,
+                                        teamName: registration.groupName,
+                                        isHost: isHost,
+                                        canStartGame: onlinePlayers.length === 2,
+                                    });
+                                }
+                            }
                         }
                     }
                     socket.leave(roomId);
@@ -650,13 +680,28 @@ const registerGameHandlers = (io) => {
                     else {
                         lobbyRoom.players = updatedPlayers;
                         lobbyRooms.set(roomId, lobbyRoom);
-                        gameNamespace.to(roomId).emit("lobby_update", {
-                            players: updatedPlayers,
-                            roomId: roomId,
-                            teamName: lobbyRoom.teamName,
-                            isHost: lobbyRoom.players[0]?.id === onlinePlayers[0]?.id,
-                            canStartGame: onlinePlayers.length === 2,
-                        });
+                        // Send individual lobby updates to each player with their correct host status
+                        const connectedSockets = gameNamespace.adapter.rooms.get(roomId);
+                        const onlineUserIds = new Set(Array.from(connectedSockets || [])
+                            .map((socketId) => {
+                            const socket = gameNamespace.sockets.get(socketId);
+                            return socket?.user?.id;
+                        })
+                            .filter((id) => id));
+                        // Send individual lobby updates to each player with their correct host status
+                        for (const playerId of onlineUserIds) {
+                            const playerSocket = Array.from(gameNamespace.sockets.values()).find((s) => s.user?.id === playerId);
+                            if (playerSocket) {
+                                const isHost = lobbyRoom.players[0]?.id === playerId;
+                                playerSocket.emit("lobby_update", {
+                                    players: updatedPlayers,
+                                    roomId: roomId,
+                                    teamName: lobbyRoom.teamName,
+                                    isHost: isHost,
+                                    canStartGame: onlinePlayers.length === 2,
+                                });
+                            }
+                        }
                     }
                 }
                 // Clean up socket mapping
