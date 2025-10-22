@@ -30,11 +30,4 @@ const userSchema = new Schema<IUser>(
   { timestamps: true }
 );
 
-// userSchema.pre("save", async function (next) {
-//   if (this.isModified("password") && this.password) {
-//     this.password = await hashPassword(this.password);
-//   }
-//   next();
-// });
-
 export const User = model<IUser>("User", userSchema);

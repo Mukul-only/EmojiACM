@@ -69,22 +69,7 @@ export const MOVIES: Movie[] = [
     genre: ["Animation", "Adventure", "Comedy"],
     difficulty: "easy",
   },
-  {
-    id: "cars",
-    title: "Cars",
-    posterUrl: "/assets/movie-posters/cars.jpg",
-    year: 2006,
-    genre: ["Animation", "Adventure", "Comedy"],
-    difficulty: "easy",
-  },
-  {
-    id: "finding-dory",
-    title: "Finding Dory",
-    posterUrl: "/assets/movie-posters/finding-dory.jpg",
-    year: 2016,
-    genre: ["Animation", "Adventure", "Comedy"],
-    difficulty: "easy",
-  },
+
   {
     id: "kung-fu-panda",
     title: "Kung Fu Panda",
@@ -119,14 +104,7 @@ export const MOVIES: Movie[] = [
     genre: ["Action", "Mystery", "Sci-Fi"],
     difficulty: "medium",
   },
-  {
-    id: "lion-king",
-    title: "The Lion King",
-    posterUrl: "/assets/movie-posters/lion-king.jpg",
-    year: 1994,
-    genre: ["Animation", "Adventure", "Drama"],
-    difficulty: "medium",
-  },
+
   {
     id: "interstellar",
     title: "Interstellar",
@@ -151,44 +129,13 @@ export const MOVIES: Movie[] = [
     genre: ["Action", "Comedy", "Romance"],
     difficulty: "medium",
   },
-  {
-    id: "captain-america",
-    title: "Captain America",
-    posterUrl: "/assets/movie-posters/captain-america.jpg",
-    year: 2011,
-    genre: ["Action", "Adventure", "Sci-Fi"],
-    difficulty: "medium",
-  },
-  {
-    id: "spider-man",
-    title: "Spider-Man",
-    posterUrl: "/assets/movie-posters/spider-man.jpg",
-    year: 2002,
-    genre: ["Action", "Adventure", "Sci-Fi"],
-    difficulty: "medium",
-  },
-  {
-    id: "the-notebook",
-    title: "The Notebook",
-    posterUrl: "/assets/movie-posters/the-notebook.jpg",
-    year: 2004,
-    genre: ["Drama", "Romance"],
-    difficulty: "medium",
-  },
+
   {
     id: "robin-hood",
     title: "Robin Hood",
     posterUrl: "/assets/movie-posters/robin-hood.jpg",
     year: 2010,
     genre: ["Action", "Adventure", "Drama"],
-    difficulty: "medium",
-  },
-  {
-    id: "twilight",
-    title: "Twilight",
-    posterUrl: "/assets/movie-posters/twilight.jpg",
-    year: 2008,
-    genre: ["Drama", "Fantasy", "Romance"],
     difficulty: "medium",
   },
 

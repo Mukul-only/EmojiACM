@@ -11,7 +11,7 @@ export interface ILeaderboard extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
-
+// .
 const leaderboardSchema = new Schema<ILeaderboard>(
   {
     registrationId: {

@@ -19,9 +19,6 @@ interface GameState {
 
 class GameManager {
   private games: Map<string, GameState> = new Map();
-
-  // ... In a real app, methods to create, update, and manage game states would go here.
-  // The GameHandler will interact with this manager.
 }
 
 export const gameManager = new GameManager();
