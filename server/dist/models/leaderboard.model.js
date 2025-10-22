@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Leaderboard = void 0;
 const mongoose_1 = require("mongoose");
+// .
 const leaderboardSchema = new mongoose_1.Schema({
     registrationId: {
         type: mongoose_1.Schema.Types.ObjectId,

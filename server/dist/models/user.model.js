@@ -14,10 +14,4 @@ const userSchema = new mongoose_1.Schema({
     achievements: { type: [String], default: [] },
     isAdmin: { type: Boolean, default: false },
 }, { timestamps: true });
-// userSchema.pre("save", async function (next) {
-//   if (this.isModified("password") && this.password) {
-//     this.password = await hashPassword(this.password);
-//   }
-//   next();
-// });
 exports.User = (0, mongoose_1.model)("User", userSchema);
