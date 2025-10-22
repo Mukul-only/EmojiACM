@@ -26,6 +26,7 @@ const io = new socket_io_1.Server(server, {
     },
     path: "/socket.io/",
 });
+//.
 // Middleware
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({ origin: config_1.default.clientOrigin, credentials: true }));
