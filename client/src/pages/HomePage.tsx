@@ -15,7 +15,7 @@ import { FaPlay } from "react-icons/fa";
 interface LandingPageProps {
   user: unknown;
 }
-
+//one
 const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
   const navigate = useNavigate();
   return (
