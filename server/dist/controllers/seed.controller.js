@@ -78,11 +78,12 @@ const seedTeams = async (req, res) => {
                 _id = new mongoose_1.default.Types.ObjectId(_id.$oid);
             }
             // Convert dates if needed
-            const createdAt = team.createdAt?.$date?.$numberLong
-                ? new Date(parseInt(team.createdAt.$date.$numberLong))
+            // Convert dates if needed
+            const createdAt = team.createdAt?.$date
+                ? new Date(team.createdAt.$date)
                 : team.createdAt;
-            const updatedAt = team.updatedAt?.$date?.$numberLong
-                ? new Date(parseInt(team.updatedAt.$date.$numberLong))
+            const updatedAt = team.updatedAt?.$date
+                ? new Date(team.updatedAt.$date)
                 : team.updatedAt;
             // Map members ObjectIds to roll numbers
             const memberRollNumbers = (team.members || []).map((m) => {
