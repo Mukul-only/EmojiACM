@@ -4,7 +4,7 @@ import { Registration, IRegistration } from "../models/registration.model";
 import { Leaderboard } from "../models/leaderboard.model";
 import { GameHistory } from "../models/gameHistory.model";
 import { User } from "../models/user.model";
-import { getRandomMovie, resetUsedMovies } from "../data/movies";
+import { getRandomMovie } from "../data/movies";
 
 const gameRooms: Map<string, any> = new Map();
 const lobbyRooms: Map<string, any> = new Map();
@@ -15,7 +15,7 @@ const TOTAL_ROUNDS = 14;
 async function endGameAndSave(
   roomId: string,
   room: any,
-  gameNamespace: Namespace
+  gameNamespace: Namespace,
 ) {
   if (room.timerId) clearInterval(room.timerId);
   room.isRoundActive = false;
@@ -37,11 +37,11 @@ async function endGameAndSave(
           members: memberIds,
           score: room.teamScore,
         },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, new: true, setDefaultsOnInsert: true },
       );
 
       console.log(
-        `[Leaderboard] Saved final score for team ${finalRegistration.groupName}: ${room.teamScore}`
+        `[Leaderboard] Saved final score for team ${finalRegistration.groupName}: ${room.teamScore}`,
       );
     }
 
@@ -115,6 +115,7 @@ function initializeGameState(roomId: string, players: any[]) {
     revealedWords: [], // Track which words have been revealed
     revealedLetters: new Set(), // Track which letter indices have been revealed
     maxRevealableLetters: 0, // 20% of total letters can be revealed
+    usedMovieIds: new Set(), // Track used movies for this room specific game
   });
 }
 
@@ -135,7 +136,7 @@ export const registerGameHandlers = (io: Server) => {
 
       console.log(
         "[DEBUG] Looking for registration with roll number:",
-        user.rollNumber
+        user.rollNumber,
       );
 
       const registration = (await Registration.findOne({
@@ -199,92 +200,136 @@ export const registerGameHandlers = (io: Server) => {
       });
 
       socket.on("start_round", async () => {
-        const roomId = socketRoomMap.get(socket.id);
-        if (!roomId) {
-          socket.emit("error", { message: "Room not found" });
-          return;
-        }
+        try {
+          if (!socket.user) return;
+          let roomId = socketRoomMap.get(socket.id);
 
-        const room = gameRooms.get(roomId);
-        const currentClients = gameNamespace.adapter.rooms.get(roomId);
+          // Recovery: If roomId or room state is missing, try to restore from DB
+          if (!roomId || !gameRooms.has(roomId)) {
+            console.log(
+              "[Recovery] Attempting to restore game state for start_round...",
+            );
+            const user = await User.findById(socket.user.id);
+            if (user) {
+              const registration = await Registration.findOne({
+                members: { $all: [user.rollNumber] },
+              });
+              if (registration) {
+                roomId = String((registration as any)._id);
+                socket.join(roomId);
+                socketRoomMap.set(socket.id, roomId);
 
-        if (room && !room.isRoundActive && currentClients?.size === 2) {
-          if (room.currentRound >= room.totalRounds) {
-            await endGameAndSave(roomId, room, gameNamespace);
+                if (!gameRooms.has(roomId)) {
+                  console.log(
+                    "[Recovery] Re-initializing game room from DB...",
+                  );
+                  const teamUsers = await User.find({
+                    rollNumber: { $in: registration.members },
+                  });
+                  const players = teamUsers.map((u: any) => ({
+                    id: u._id.toString(),
+                    username: u.username,
+                    name: u.name,
+                    rollNumber: u.rollNumber,
+                  }));
+                  if (players.length === 2) {
+                    initializeGameState(roomId, players);
+                  }
+                }
+              }
+            }
+          }
+
+          if (!roomId) {
+            socket.emit("error", { message: "Room not found" });
             return;
           }
 
-          room.currentRound++;
-          room.isRoundActive = true;
-          const selectedMovie = getRandomMovie();
-          room.currentMovie = selectedMovie.title;
-          room.currentMovieData = selectedMovie;
-          room.currentIcons = [];
-          room.timer = 90;
-          room.revealedWords = []; // Reset revealed words for new round
-          room.revealedLetters = new Set(); // Reset revealed letters
-          // Calculate 20% of total letters (excluding spaces)
-          const totalLetters = selectedMovie.title.replace(/ /g, "").length;
-          room.maxRevealableLetters = Math.ceil(totalLetters * 0.2);
+          const room = gameRooms.get(roomId);
+          const currentClients = gameNamespace.adapter.rooms.get(roomId);
 
-          // Use existing roles instead of reassigning
-          if (!room.clueGiverId || !room.guesserId) {
-            const playerIds = Array.from(room.players.keys());
-            room.clueGiverId = playerIds[0];
-            room.guesserId = playerIds[1];
-          }
+          // FORCE START: Always allow starting/restarting round
+          if (room) {
+            // Cancel existing timer if any (in case of restart)
+            if (room.timerId) clearInterval(room.timerId);
 
-          // Send movie data only to clue giver, other data to everyone
-          gameNamespace.to(roomId).emit("round_start", {
-            clueGiverId: room.clueGiverId,
-            guesserId: room.guesserId,
-            movieToGuess: selectedMovie.title
-              .split(" ")
-              .map((word) => "_".repeat(word.length))
-              .join(" "),
-            currentRound: room.currentRound,
-            totalRounds: room.totalRounds,
-            isRoundActive: true,
-            timeLeft: 90,
-          });
+            if (room.currentRound >= room.totalRounds) {
+              await endGameAndSave(roomId, room, gameNamespace);
+              return;
+            }
 
-          // Send additional movie data only to clue giver using the room
-          const clueGiverSocket = Array.from(
-            gameNamespace.sockets.values()
-          ).find((s: any) => s.user?.id === room.clueGiverId);
+            room.currentRound++;
+            room.isRoundActive = true;
+            const selectedMovie = getRandomMovie(room.usedMovieIds);
+            room.usedMovieIds.add(selectedMovie.id);
+            room.currentMovie = selectedMovie.title;
+            room.currentMovieData = selectedMovie;
+            room.currentIcons = [];
+            room.timer = 90;
+            room.revealedWords = []; // Reset revealed words for new round
+            room.revealedLetters = new Set(); // Reset revealed letters
+            // Calculate 20% of total letters (excluding spaces)
+            const totalLetters = selectedMovie.title.replace(/ /g, "").length;
+            room.maxRevealableLetters = Math.ceil(totalLetters * 0.2);
 
-          if (clueGiverSocket) {
-            gameNamespace.to(clueGiverSocket.id).emit("clue_giver_data", {
-              movieTitle: selectedMovie.title,
-              movieData: selectedMovie,
+            // Use existing roles instead of reassigning
+            if (!room.clueGiverId || !room.guesserId) {
+              const playerIds = Array.from(room.players.keys());
+              room.clueGiverId = playerIds[0];
+              room.guesserId = playerIds[1];
+            }
+
+            // Send movie data only to clue giver, other data to everyone
+            gameNamespace.to(roomId).emit("round_start", {
+              clueGiverId: room.clueGiverId,
+              guesserId: room.guesserId,
+              movieToGuess: selectedMovie.title
+                .split(" ")
+                .map((word) => "_".repeat(word.length))
+                .join(" "),
+              currentRound: room.currentRound,
+              totalRounds: room.totalRounds,
+              isRoundActive: true,
+              timeLeft: 90,
             });
-          }
 
-          room.timerId = setInterval(() => {
-            room.timer--;
-            gameNamespace
-              .to(roomId)
-              .emit("timer_tick", { timeLeft: room.timer });
-            if (room.timer <= 0) {
-              clearInterval(room.timerId);
-              room.isRoundActive = false;
-              // Clear movie data at the end of the round
-              const movieTitle = room.currentMovie;
-              room.currentMovie = "";
-              room.currentMovieData = null;
-              room.currentIcons = [];
-              gameNamespace.to(roomId).emit("round_end", {
-                correct: false,
-                message: `Time's up! The movie was: ${movieTitle}`,
-                teamScore: room.teamScore,
-                movieData: null, // Explicitly clear movie data in client
+            // Send additional movie data only to clue giver using the room
+            const clueGiverSocket = Array.from(
+              gameNamespace.sockets.values(),
+            ).find((s: any) => s.user?.id === room.clueGiverId);
+
+            if (clueGiverSocket) {
+              gameNamespace.to(clueGiverSocket.id).emit("clue_giver_data", {
+                movieTitle: selectedMovie.title,
+                movieData: selectedMovie,
               });
             }
-          }, 1000);
-        } else {
-          socket.emit("error", {
-            message: "Waiting for the other player to join...",
-          });
+
+            room.timerId = setInterval(() => {
+              room.timer--;
+              gameNamespace
+                .to(roomId)
+                .emit("timer_tick", { timeLeft: room.timer });
+              if (room.timer <= 0) {
+                clearInterval(room.timerId);
+                room.isRoundActive = false;
+                // Clear movie data at the end of the round
+                const movieTitle = room.currentMovie;
+                room.currentMovie = "";
+                room.currentMovieData = null;
+                room.currentIcons = [];
+                gameNamespace.to(roomId).emit("round_end", {
+                  correct: false,
+                  message: `Time's up! The movie was: ${movieTitle}`,
+                  teamScore: room.teamScore,
+                  movieData: null, // Explicitly clear movie data in client
+                });
+              }
+            }, 1000);
+          }
+        } catch (error) {
+          console.error("Error in start_round:", error);
+          socket.emit("error", { message: "Failed to start round" });
         }
       });
 
@@ -298,7 +343,7 @@ export const registerGameHandlers = (io: Server) => {
         const room = gameRooms.get(roomId);
         if (room) {
           console.log(
-            `[Game Forfeit] Team in room ${roomId} has forfeited the game.`
+            `[Game Forfeit] Team in room ${roomId} has forfeited the game.`,
           );
           room.teamScore = 0; // Set score to 0 as requested
           await endGameAndSave(roomId, room, gameNamespace);
@@ -429,7 +474,7 @@ export const registerGameHandlers = (io: Server) => {
               {
                 clueGiverId: room.clueGiverId,
                 guesserId: room.guesserId,
-              }
+              },
             );
 
             // Store movie title before clearing
@@ -476,7 +521,7 @@ export const registerGameHandlers = (io: Server) => {
                     .map((word: string, idx: number) =>
                       room.revealedWords.includes(idx)
                         ? word
-                        : "_".repeat(word.length)
+                        : "_".repeat(word.length),
                     )
                     .join(" ");
 
@@ -498,6 +543,80 @@ export const registerGameHandlers = (io: Server) => {
               });
             }
           }
+        }
+      });
+
+      socket.on("check_active_game", async () => {
+        if (!socket.user) return;
+
+        try {
+          const user = await User.findById(socket.user.id);
+          if (!user) return;
+
+          const registration = await Registration.findOne({
+            members: { $all: [user.rollNumber] },
+          });
+
+          if (!registration) return;
+
+          const roomId = String((registration as any)._id);
+
+          // Re-establish socket room membership
+          socket.join(roomId);
+          socketRoomMap.set(socket.id, roomId);
+
+          // Check for active game
+          const activeGameRoom = gameRooms.get(roomId);
+          if (activeGameRoom) {
+            console.log(
+              "[DEBUG] Player rejoining active game via check_active_game:",
+              roomId,
+            );
+
+            const movieToGuess = activeGameRoom.currentMovie
+              .split(" ")
+              .map((word: string, idx: number) => {
+                if (activeGameRoom.revealedWords.includes(idx)) return word;
+                return "_".repeat(word.length);
+              })
+              .join(" ");
+
+            const revealedMap: { [key: number]: string } = {};
+            activeGameRoom.revealedLetters.forEach((idx: number) => {
+              const movieTitleNoSpaces = activeGameRoom.currentMovie.replace(
+                / /g,
+                "",
+              );
+              revealedMap[idx] = movieTitleNoSpaces[idx];
+            });
+
+            const isClueGiver = activeGameRoom.clueGiverId === socket.user.id;
+
+            socket.emit("game_rejoin", {
+              clueGiverId: activeGameRoom.clueGiverId,
+              guesserId: activeGameRoom.guesserId,
+              movieToGuess: movieToGuess,
+              currentRound: activeGameRoom.currentRound,
+              totalRounds: activeGameRoom.totalRounds,
+              isRoundActive: activeGameRoom.isRoundActive,
+              timeLeft: activeGameRoom.timer,
+              icons: activeGameRoom.currentIcons,
+              revealedMap: revealedMap,
+              isClueGiver: isClueGiver,
+              movieTitle: isClueGiver ? activeGameRoom.currentMovie : "",
+              movieData: isClueGiver ? activeGameRoom.currentMovieData : null,
+            });
+          } else {
+            console.log("[DEBUG] No active game found for room:", roomId);
+            console.log(
+              "[DEBUG] Available rooms:",
+              Array.from(gameRooms.keys()),
+            );
+            socket.emit("game_not_found");
+          }
+        } catch (error) {
+          console.error("Error in check_active_game:", error);
+          socket.emit("game_not_found");
         }
       });
 
@@ -556,11 +675,11 @@ export const registerGameHandlers = (io: Server) => {
             Array.from(connectedSockets || [])
               .map((socketId) => {
                 const socket = gameNamespace.sockets.get(
-                  socketId
+                  socketId,
                 ) as AuthenticatedSocket;
                 return socket?.user?.id;
               })
-              .filter((id) => id)
+              .filter((id) => id),
           );
 
           const updatedPlayers = teamUsers.map((user: any) => ({
@@ -590,17 +709,17 @@ export const registerGameHandlers = (io: Server) => {
             Array.from(currentConnectedSockets || [])
               .map((socketId) => {
                 const socket = gameNamespace.sockets.get(
-                  socketId
+                  socketId,
                 ) as AuthenticatedSocket;
                 return socket?.user?.id;
               })
-              .filter((id) => id)
+              .filter((id) => id),
           );
 
           // Send individual lobby updates to each player with their correct host status
           for (const playerId of currentOnlineUserIds) {
             const playerSocket = Array.from(
-              gameNamespace.sockets.values()
+              gameNamespace.sockets.values(),
             ).find((s: any) => s.user?.id === playerId);
 
             if (playerSocket) {
@@ -644,7 +763,7 @@ export const registerGameHandlers = (io: Server) => {
             hasLobbyRoom: !!lobbyRoom,
             playersInLobby: lobbyRoom?.players?.length,
             onlinePlayerCount: lobbyRoom?.players?.filter(
-              (p: any) => p.isOnline
+              (p: any) => p.isOnline,
             ).length,
             currentUser: socket.user.username,
           });
@@ -657,7 +776,7 @@ export const registerGameHandlers = (io: Server) => {
           }
 
           const onlinePlayers = lobbyRoom.players.filter(
-            (p: any) => p.isOnline
+            (p: any) => p.isOnline,
           );
 
           if (onlinePlayers.length !== 2) {
@@ -692,8 +811,6 @@ export const registerGameHandlers = (io: Server) => {
             message: "Initial roles have been assigned!",
           });
 
-          // Reset used movies when starting a new game
-          resetUsedMovies();
           lobbyRooms.delete(roomId);
 
           console.log("[DEBUG] Game started successfully for room:", roomId, {
@@ -728,7 +845,7 @@ export const registerGameHandlers = (io: Server) => {
 
           if (lobbyRoom) {
             const onlinePlayers = lobbyRoom.players.filter(
-              (p: any) => p.id !== socket.user?.id && p.isOnline
+              (p: any) => p.id !== socket.user?.id && p.isOnline,
             );
 
             const updatedPlayers = registration.members.map((member: any) => ({
@@ -742,7 +859,7 @@ export const registerGameHandlers = (io: Server) => {
                 member._id.toString() === socket.user?.id
                   ? false
                   : onlinePlayers.some(
-                      (p: { id: string }) => p.id === member._id.toString()
+                      (p: { id: string }) => p.id === member._id.toString(),
                     ),
             }));
 
@@ -758,17 +875,17 @@ export const registerGameHandlers = (io: Server) => {
                 Array.from(connectedSockets || [])
                   .map((socketId) => {
                     const socket = gameNamespace.sockets.get(
-                      socketId
+                      socketId,
                     ) as AuthenticatedSocket;
                     return socket?.user?.id;
                   })
-                  .filter((id) => id)
+                  .filter((id) => id),
               );
 
               // Send individual lobby updates to each player with their correct host status
               for (const playerId of onlineUserIds) {
                 const playerSocket = Array.from(
-                  gameNamespace.sockets.values()
+                  gameNamespace.sockets.values(),
                 ).find((s: any) => s.user?.id === playerId);
 
                 if (playerSocket) {
@@ -793,7 +910,7 @@ export const registerGameHandlers = (io: Server) => {
         }
       });
 
-      socket.on("disconnect", () => {
+      socket.on("disconnect", async () => {
         console.log(`User disconnected: ${socket.user?.username}`);
 
         const roomId = socketRoomMap.get(socket.id);
@@ -802,18 +919,23 @@ export const registerGameHandlers = (io: Server) => {
         if (gameRooms.has(roomId)) {
           const room = gameRooms.get(roomId);
           if (room.isRoundActive) {
-            clearInterval(room.timerId);
-            gameNamespace.to(roomId).emit("player_disconnected", {
-              message: "Other player disconnected. Returning to lobby.",
+            console.log(
+              `[Disconnect] active game in room ${roomId}. Ending game.`,
+            );
+            // End game and save current score (or 0 if penalty desired, but preserving score is nicer)
+            await endGameAndSave(roomId, room, gameNamespace);
+
+            // Notify others specially
+            gameNamespace.to(roomId).emit("game_terminated", {
+              message: "Other player disconnected. Game Over.",
             });
-            gameRooms.delete(roomId);
           }
         }
 
         const lobbyRoom = lobbyRooms.get(roomId);
         if (lobbyRoom && socket.user) {
           const updatedPlayers = lobbyRoom.players.map((p: any) =>
-            p.id === socket.user?.id ? { ...p, isOnline: false } : p
+            p.id === socket.user?.id ? { ...p, isOnline: false } : p,
           );
 
           const onlinePlayers = updatedPlayers.filter((p: any) => p.isOnline);
@@ -830,17 +952,17 @@ export const registerGameHandlers = (io: Server) => {
               Array.from(connectedSockets || [])
                 .map((socketId) => {
                   const socket = gameNamespace.sockets.get(
-                    socketId
+                    socketId,
                   ) as AuthenticatedSocket;
                   return socket?.user?.id;
                 })
-                .filter((id) => id)
+                .filter((id) => id),
             );
 
             // Send individual lobby updates to each player with their correct host status
             for (const playerId of onlineUserIds) {
               const playerSocket = Array.from(
-                gameNamespace.sockets.values()
+                gameNamespace.sockets.values(),
               ).find((s: any) => s.user?.id === playerId);
 
               if (playerSocket) {
@@ -865,10 +987,15 @@ export const registerGameHandlers = (io: Server) => {
           if (!clientsInRoom || clientsInRoom.size === 0) {
             if (gameRooms.has(roomId)) {
               console.log(
-                `[State Cleanup] Room ${roomId} is empty. Deleting game state.`
+                `[State Cleanup] Room ${roomId} is empty. Checking again...`,
               );
-              clearInterval(gameRooms.get(roomId).timerId);
-              gameRooms.delete(roomId);
+              // Valid check: if clients really empty?
+              // const clients = gameNamespace.adapter.rooms.get(roomId);
+              // if (!clients || clients.size === 0) {
+              //    clearInterval(gameRooms.get(roomId).timerId);
+              //    gameRooms.delete(roomId);
+              //    console.log(`[State Cleanup] Deleted room ${roomId}`);
+              // }
             }
           }
         }, 5000);

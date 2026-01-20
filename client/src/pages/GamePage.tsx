@@ -163,9 +163,28 @@ const GuessHistoryLog: React.FC<{
 
 // Enhanced Emoji Display with better styling and intelligent scrolling
 const EmojiDisplay: React.FC<{ icons: string[] }> = ({ icons }) => {
+  const [isHighlighted, setIsHighlighted] = useState(false);
+  const prevIconsLengthRef = useRef(0);
+
+  useEffect(() => {
+    // Only highlight if icons were added (length increased)
+    if (icons && icons.length > prevIconsLengthRef.current) {
+      setIsHighlighted(true);
+      const timer = setTimeout(() => setIsHighlighted(false), 800);
+      return () => clearTimeout(timer);
+    }
+    prevIconsLengthRef.current = icons ? icons.length : 0;
+  }, [icons]);
+
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <div className="relative overflow-hidden border shadow-2xl bg-gray-800/80 backdrop-blur-xl rounded-3xl border-white/10">
+      <div
+        className={`relative overflow-hidden border shadow-2xl bg-gray-800/80 backdrop-blur-xl rounded-3xl transition-all duration-300 ${
+          isHighlighted
+            ? "border-[#7BFF66] shadow-[0_0_30px_rgba(123,255,102,0.3)] scale-[1.02]"
+            : "border-white/10"
+        }`}
+      >
         <div className="p-8 max-h-[40vh] overflow-y-auto emoji-scrollbar">
           {icons && icons.length > 0 ? (
             <div className="flex flex-wrap items-center justify-center gap-4 min-h-[150px]">
@@ -181,8 +200,12 @@ const EmojiDisplay: React.FC<{ icons: string[] }> = ({ icons }) => {
             </div>
           ) : (
             <div className="flex items-center justify-center h-32">
-              <p className="text-xl text-white/30 animate-pulse">
-                Waiting for clues...
+              <p
+                className={`text-xl transition-colors duration-300 ${
+                  isHighlighted ? "text-[#7BFF66]" : "text-white/30"
+                } animate-pulse`}
+              >
+                {isHighlighted ? "New Clue!" : "Waiting for clues..."}
               </p>
             </div>
           )}
@@ -242,8 +265,8 @@ const RulesCarousel: React.FC = () => {
                 index === currentSlide
                   ? "opacity-100 translate-x-0"
                   : index < currentSlide
-                  ? "opacity-0 -translate-x-full"
-                  : "opacity-0 translate-x-full"
+                    ? "opacity-0 -translate-x-full"
+                    : "opacity-0 translate-x-full"
               }`}
             >
               <div className="flex flex-col items-center justify-center h-full space-y-6">
@@ -354,7 +377,7 @@ const GamePage = () => {
   const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [revealedLetters, setRevealedLetters] = useState<Set<number>>(
-    new Set()
+    new Set(),
   );
   const [revealedLetterMap, setRevealedLetterMap] = useState<{
     [key: number]: string;
@@ -377,21 +400,14 @@ const GamePage = () => {
       .connect("/game", token)
       .then((socket) => {
         setIsConnected(true);
+        // Check if there's an active game session to rejoin
+        socket.emit("check_active_game");
 
-        socket.on("round_start", (data) => {
-          if (user._id === data.clueGiverId) setMyRole("clue-giver");
-          else if (user._id === data.guesserId) setMyRole("guesser");
-          setGameState((prev) => ({
-            ...prev,
-            ...data,
-            isRoundActive: true,
-            message: "",
-            icons: [], // Clear emojis when new round starts
-          }));
-          setGuessHistory([]);
-          setShowIconPicker(false);
-          setRevealedLetters(new Set()); // Reset revealed letters for new round
-          setRevealedLetterMap({}); // Reset revealed letter map
+        socket.on("game_not_found", () => {
+          console.log(
+            "Server reported execution no active game. Redirecting...",
+          );
+          // navigate("/");
         });
 
         socket.on("clue_giver_data", (data) => {
@@ -400,6 +416,25 @@ const GamePage = () => {
             movieTitle: data.movieTitle,
             movieData: data.movieData,
           }));
+        });
+
+        socket.on("round_start", (data) => {
+          console.log("Round started:", data);
+          if (user._id === data.clueGiverId) setMyRole("clue-giver");
+          else if (user._id === data.guesserId) setMyRole("guesser");
+
+          setGameState((prev) => ({
+            ...prev,
+            ...data,
+            isRoundActive: true,
+            icons: [],
+            message: `Round ${data.currentRound} Started!`,
+          }));
+
+          setGuess("");
+          setGuessHistory([]);
+          setRevealedLetters(new Set());
+          setRevealedLetterMap({});
         });
 
         socket.on("round_end", (data) => {
@@ -416,6 +451,13 @@ const GamePage = () => {
 
         socket.on("game_over", () => {
           setIsGameOver(true);
+        });
+
+        socket.on("game_terminated", ({ message }) => {
+          setGameState((prev) => ({ ...prev, message }));
+          setTimeout(() => {
+            setIsGameOver(true);
+          }, 2000);
         });
 
         socket.on("score_update", (data) => {
@@ -448,7 +490,7 @@ const GamePage = () => {
             setTimeout(() => {
               setGameState((prev) => ({ ...prev, message: "" }));
             }, 3000);
-          }
+          },
         );
 
         socket.on(
@@ -457,14 +499,14 @@ const GamePage = () => {
             setRevealedLetterMap((prev) => ({ ...prev, ...data.revealedMap }));
             const newIndices = Object.keys(data.revealedMap).map(Number);
             setRevealedLetters((prev) => new Set([...prev, ...newIndices]));
-          }
+          },
         );
 
         socket.on("timer_tick", ({ timeLeft }) =>
-          setGameState((prev) => ({ ...prev, timeLeft }))
+          setGameState((prev) => ({ ...prev, timeLeft })),
         );
         socket.on("icon_update", ({ icons }) =>
-          setGameState((prev) => ({ ...prev, icons }))
+          setGameState((prev) => ({ ...prev, icons })),
         );
         socket.on("roles_switched", ({ clueGiverId, guesserId }) => {
           if (user._id === clueGiverId) setMyRole("clue-giver");
@@ -473,6 +515,29 @@ const GamePage = () => {
         socket.on("error", ({ message }) => {
           setError(message);
           setTimeout(() => setError(""), 3000);
+        });
+        socket.on("game_rejoin", (data) => {
+          console.log("Rejoining active game:", data);
+          if (user._id === data.clueGiverId) setMyRole("clue-giver");
+          else if (user._id === data.guesserId) setMyRole("guesser");
+
+          setGameState((prev) => ({
+            ...prev,
+            ...data,
+            isRoundActive: data.isRoundActive,
+            movieTitle: data.isClueGiver ? data.movieTitle : "",
+            movieData: data.isClueGiver ? data.movieData : null,
+            icons: data.icons || [],
+            message: "Reconnected to game!",
+            timeLeft: data.timeLeft,
+          }));
+
+          // Restore revealed letters and words if any
+          if (data.revealedMap) {
+            setRevealedLetterMap(data.revealedMap);
+            const newIndices = Object.keys(data.revealedMap).map(Number);
+            setRevealedLetters(new Set(newIndices));
+          }
         });
       })
       .catch((err) => {
@@ -500,7 +565,15 @@ const GamePage = () => {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [shouldWarnOnLeave]);
 
-  const handleStartRound = () => socketService.socket?.emit("start_round");
+  const handleStartRound = () => {
+    console.log("Start Round Button Clicked");
+    if (socketService.socket) {
+      console.log("Emitting start_round...");
+      socketService.socket.emit("start_round");
+    } else {
+      console.error("Socket not connected!");
+    }
+  };
 
   // FIXED: Don't close picker after selecting emoji
   const handleIconClick = (emojiData: EmojiClickData) => {
@@ -641,6 +714,13 @@ const GamePage = () => {
 
   return (
     <div className="relative flex flex-col h-screen overflow-hidden font-sans text-white bg-gray-950">
+      {/* Error Toast */}
+      {error && (
+        <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 bg-red-500/90 backdrop-blur-md text-white font-semibold rounded-xl shadow-2xl animate-fadeIn border border-white/20">
+          {error}
+        </div>
+      )}
+
       {/* Leave Confirmation Modal (for back navigation) */}
       {blocker.state === "blocked" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md animate-fadeIn">
@@ -896,7 +976,7 @@ const GamePage = () => {
                             0,
                             0,
                             0,
-                            canvas.height
+                            canvas.height,
                           );
                           gradient.addColorStop(0, "#1a1a2e");
                           gradient.addColorStop(1, "#16213e");
@@ -921,7 +1001,7 @@ const GamePage = () => {
                           ctx.fillText(
                             "INFOTREK'25",
                             canvas.width / 2,
-                            canvas.height / 2 - 60
+                            canvas.height / 2 - 60,
                           );
 
                           ctx.fillStyle = "white";
@@ -929,7 +1009,7 @@ const GamePage = () => {
                           ctx.fillText(
                             "NITT",
                             canvas.width / 2,
-                            canvas.height / 2
+                            canvas.height / 2,
                           );
 
                           ctx.fillStyle = "#7BFF66";
@@ -937,7 +1017,7 @@ const GamePage = () => {
                           ctx.fillText(
                             "EmojiCharades",
                             canvas.width / 2,
-                            canvas.height / 2 + 60
+                            canvas.height / 2 + 60,
                           );
 
                           // Add movie title
@@ -966,7 +1046,7 @@ const GamePage = () => {
                           ctx.fillText(
                             "🎬 🎭 🎪",
                             canvas.width / 2,
-                            canvas.height - 100
+                            canvas.height - 100,
                           );
                         }
 
@@ -992,8 +1072,8 @@ const GamePage = () => {
                         gameState.movieData.difficulty === "easy"
                           ? "bg-green-500/20 text-green-400"
                           : gameState.movieData.difficulty === "medium"
-                          ? "bg-yellow-500/20 text-yellow-400"
-                          : "bg-red-500/20 text-red-400"
+                            ? "bg-yellow-500/20 text-yellow-400"
+                            : "bg-red-500/20 text-red-400"
                       }`}
                     >
                       {gameState.movieData.difficulty.charAt(0).toUpperCase() +

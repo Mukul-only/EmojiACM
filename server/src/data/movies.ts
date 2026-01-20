@@ -8,9 +8,6 @@ export interface Movie {
   description?: string;
 }
 
-// Set to keep track of used movies during a game session
-const usedMovies = new Set<string>();
-
 export const MOVIES: Movie[] = [
   // ---------- EASY ----------
   {
@@ -200,45 +197,40 @@ export const MOVIES: Movie[] = [
 
 // Helper functions
 export const getRandomMovie = (
-  difficulty?: "easy" | "medium" | "hard"
+  excludedIds: Set<string> = new Set(),
+  difficulty?: "easy" | "medium" | "hard",
 ): Movie => {
   const filteredMovies = difficulty
     ? MOVIES.filter((movie) => movie.difficulty === difficulty)
     : MOVIES;
 
-  // Filter out used movies
+  // Filter out used movies from the provided set
   const availableMovies = filteredMovies.filter(
-    (movie) => !usedMovies.has(movie.id)
+    (movie) => !excludedIds.has(movie.id),
   );
 
-  // If all movies have been used, reset the usedMovies set
+  // If all movies have been used, we can either return null, error, or reset.
+  // For this logic, if we run out, we'll just pick from the full list again (implicitly resetting for this call)
+  // OR we can throw an error. Let's fallback to full list but generally we want to avoid repeats.
   if (availableMovies.length === 0) {
-    usedMovies.clear();
-    return getRandomMovie(difficulty); // Retry with reset list
+    // Fallback: pick from any movie that matches difficulty, ignoring exclusion to prevent crashing
+    const fallbackList = filteredMovies;
+    const randomIndex = Math.floor(Math.random() * fallbackList.length);
+    return fallbackList[randomIndex];
   }
 
   const randomIndex = Math.floor(Math.random() * availableMovies.length);
-  const selectedMovie = availableMovies[randomIndex];
-
-  // Mark the movie as used
-  usedMovies.add(selectedMovie.id);
-
-  return selectedMovie;
+  return availableMovies[randomIndex];
 };
 
 export const getMovieByTitle = (title: string): Movie | undefined => {
   return MOVIES.find(
-    (movie) => movie.title.toLowerCase() === title.toLowerCase()
+    (movie) => movie.title.toLowerCase() === title.toLowerCase(),
   );
 };
 
 export const getMoviesByDifficulty = (
-  difficulty: "easy" | "medium" | "hard"
+  difficulty: "easy" | "medium" | "hard",
 ): Movie[] => {
   return MOVIES.filter((movie) => movie.difficulty === difficulty);
-};
-
-// Function to reset used movies (can be called when starting a new game)
-export const resetUsedMovies = () => {
-  usedMovies.clear();
 };

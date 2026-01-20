@@ -1,0 +1,64 @@
+config:
+  target: "http://localhost:4000/game"
+  phases:
+    - duration: 10
+      arrivalRate: 10
+  payload:
+    path: "users.csv"
+    fields:
+      - "username"
+      - "token"
+      - "roomId"
+    order: "sequence"
+  engines:
+    socketio:
+      path: "/socket.io/"
+      transports: ["websocket"]
+
+scenarios:
+  - name: "Game Flow"
+    engine: "socketio"
+    flow:
+      # Connect (Namespace is in target)
+      - connect:
+          auth:
+            token: "{{ token }}"
+      
+      # Join Lobby
+      - emit:
+          channel: "join_lobby"
+      
+      - think: 2
+
+      # Start Game (everyone tries, server ignores non-host or not-ready)
+      - emit:
+          channel: "start_game"
+          data: { roomId: "{{ roomId }}" }
+
+      - think: 2
+
+      # Check active (simulating page load)
+      - emit:
+          channel: "check_active_game"
+
+      - think: 1
+
+      # Start Round
+      - emit:
+          channel: "start_round"
+      
+      - think: 5
+      
+      # Send Icon (everyone tries, server ignores Guesser)
+      - emit:
+          channel: "send_icon"
+          data: { icon: "🔥" }
+
+      - think: 2
+
+      # Submit Guess (everyone tries, server ignores Clue Giver)
+      - emit:
+          channel: "submit_guess"
+          data: { guess: "Matrix" }
+      
+      - think: 5

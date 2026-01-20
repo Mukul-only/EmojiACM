@@ -69,7 +69,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
                   at
                   <span className="font-semibold text-primary">
                     {" "}
-                    INFOTREK’25.
+                    INFOTREK’25
                   </span>
                   .
                 </p>
