@@ -69,7 +69,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
                   at
                   <span className="font-semibold text-primary">
                     {" "}
-                    INFOTREK’25
+                    ACUMEN’25
                   </span>
                   .
                 </p>
@@ -208,7 +208,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
             </div>
 
             <div className="text-center md:text-right">
-              <p className="mb-2 text-gray-400">infotrek'25, ACM NITT</p>
+              <p className="mb-2 text-gray-400">acumen'25, ACM NITT</p>
             </div>
           </div>
         </div>
