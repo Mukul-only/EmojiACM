@@ -999,7 +999,7 @@ const GamePage = () => {
                           ctx.font = "bold 60px sans-serif";
                           ctx.textAlign = "center";
                           ctx.fillText(
-                            "INFOTREK'25",
+                            "ACUMEN'25",
                             canvas.width / 2,
                             canvas.height / 2 - 60,
                           );
