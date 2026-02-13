@@ -8,6 +8,7 @@
     "start": "node dist/server.js",
     "hash-password": "ts-node src/utils/password.ts --generate-hash",
     "seed": "ts-node scripts/seed.ts",
+    "seed:db": "ts-node scripts/seed_db.ts",
     "seed:dummy": "ts-node scripts/seed_dummy.ts"
   },
   "keywords": [],

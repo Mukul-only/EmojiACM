@@ -66,6 +66,22 @@ export const MOVIES: Movie[] = [
     genre: ["Comedy", "Drama"],
     difficulty: "easy",
   },
+  {
+    id: "avatar",
+    title: "Avatar",
+    posterUrl: "/assets/movie-posters/avatar.jpg",
+    year: 2009,
+    genre: ["Sci-Fi", "Action", "Adventure"],
+    difficulty: "easy",
+  },
+  {
+    id: "lagaan",
+    title: "Lagaan",
+    posterUrl: "/assets/movie-posters/lagaan.jpg",
+    year: 2001,
+    genre: ["Drama", "Sports"],
+    difficulty: "easy",
+  },
   // ---------- MEDIUM ----------
   {
     id: "the-dark-knight",
@@ -97,6 +113,22 @@ export const MOVIES: Movie[] = [
     posterUrl: "/assets/movie-posters/housefull.jpg",
     year: 2010,
     genre: ["Comedy", "Romance"],
+    difficulty: "medium",
+  },
+  {
+    id: "john-wick",
+    title: "John Wick",
+    posterUrl: "/assets/movie-posters/john-wick.jpg",
+    year: 2014,
+    genre: ["Action", "Thriller"],
+    difficulty: "medium",
+  },
+  {
+    id: "thor",
+    title: "Thor",
+    posterUrl: "/assets/movie-posters/thor.jpg",
+    year: 2011,
+    genre: ["Action", "Adventure", "Fantasy"],
     difficulty: "medium",
   },
   // ---------- HARD ----------

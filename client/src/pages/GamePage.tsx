@@ -53,7 +53,7 @@ interface Guess {
   guess: string;
 }
 
-const TOTAL_ROUNDS = 14;
+const TOTAL_ROUNDS = 18;
 
 // Enhanced Timer component with circular progress
 const HudTimer: React.FC<{ timeLeft: number; totalTime: number }> = ({

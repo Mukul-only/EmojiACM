@@ -10,7 +10,7 @@ const gameRooms: Map<string, any> = new Map();
 const lobbyRooms: Map<string, any> = new Map();
 // Track socket to roomId mapping for reliable roomId retrieval
 const socketRoomMap: Map<string, string> = new Map();
-const TOTAL_ROUNDS = 14;
+const TOTAL_ROUNDS = 18;
 
 async function endGameAndSave(
   roomId: string,
