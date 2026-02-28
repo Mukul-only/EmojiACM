@@ -44,7 +44,7 @@ const seed = async () => {
     console.log(`Found ${userInputs.length} users in users.json`);
 
     // 3. Prepare Data
-    const password = await hashPassword("Acumen25");
+    const password = await hashPassword("Version26");
     const usersToInsert = [];
     const teamsToInsert = [];
 
@@ -88,13 +88,15 @@ const seed = async () => {
           members: [user1Input.username, user2Input.username],
         });
       } else if (user1Input) {
-         // Handle last user if odd count - add to solo team or handle as needed
-         // For now, adding to a team with just themselves to ensure they can play/join
-         console.warn(`Warning: User ${user1Input.username} has no partner. Creating solo team.`);
-         teamsToInsert.push({
-            groupName: teamName,
-            members: [user1Input.username],
-         });
+        // Handle last user if odd count - add to solo team or handle as needed
+        // For now, adding to a team with just themselves to ensure they can play/join
+        console.warn(
+          `Warning: User ${user1Input.username} has no partner. Creating solo team.`,
+        );
+        teamsToInsert.push({
+          groupName: teamName,
+          members: [user1Input.username],
+        });
       }
     }
 
@@ -102,17 +104,20 @@ const seed = async () => {
     if (usersToInsert.length > 0) {
       const createdUsers = await User.insertMany(usersToInsert);
       console.log(`Successfully created ${createdUsers.length} users.`);
-      createdUsers.forEach(u => console.log(` - ${u.username} (${u.teamName})`));
+      createdUsers.forEach((u) =>
+        console.log(` - ${u.username} (${u.teamName})`),
+      );
     }
 
     if (teamsToInsert.length > 0) {
       const createdTeams = await Registration.insertMany(teamsToInsert);
       console.log(`Successfully created ${createdTeams.length} teams.`);
-      createdTeams.forEach(t => console.log(` - ${t.groupName}: ${t.members.join(", ")}`));
+      createdTeams.forEach((t) =>
+        console.log(` - ${t.groupName}: ${t.members.join(", ")}`),
+      );
     }
 
     console.log("Seeding completed successfully.");
-
   } catch (error) {
     console.error("Error seeding data:", error);
     process.exit(1);
