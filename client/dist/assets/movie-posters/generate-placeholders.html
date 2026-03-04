@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Movie Poster Placeholder Generator</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: #1a1a1a;
+        color: white;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .poster {
+        width: 300px;
+        height: 450px;
+        background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+        border: 2px solid #444;
+        margin: 10px;
+        display: inline-block;
+        position: relative;
+        border-radius: 8px;
+      }
+      .poster-content {
+        padding: 20px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+      .movie-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #7bff66;
+      }
+      .movie-year {
+        font-size: 14px;
+        color: #ccc;
+        margin-bottom: 5px;
+      }
+      .movie-genre {
+        font-size: 12px;
+        color: #888;
+      }
+      .download-btn {
+        background: #7bff66;
+        color: #1a1a1a;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+        font-weight: bold;
+      }
+      .download-btn:hover {
+        background: #6aee55;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Movie Poster Placeholder Generator</h1>
+      <p>
+        Click the download buttons to generate placeholder images for each
+        movie.
+      </p>
+
+      <div id="posters"></div>
+    </div>
+
+    <script>
+      const movies = [
+        // Easy Movies
+        {
+          id: "matrix",
+          title: "The Matrix",
+          year: 1999,
+          genre: "Action, Sci-Fi",
+        },
+        {
+          id: "inception",
+          title: "Inception",
+          year: 2010,
+          genre: "Action, Sci-Fi, Thriller",
+        },
+        {
+          id: "titanic",
+          title: "Titanic",
+          year: 1997,
+          genre: "Drama, Romance",
+        },
+        {
+          id: "lion-king",
+          title: "The Lion King",
+          year: 1994,
+          genre: "Animation, Adventure, Drama",
+        },
+        {
+          id: "forrest-gump",
+          title: "Forrest Gump",
+          year: 1994,
+          genre: "Drama, Romance",
+        },
+        { id: "jaws", title: "Jaws", year: 1975, genre: "Thriller, Horror" },
+        {
+          id: "pulp-fiction",
+          title: "Pulp Fiction",
+          year: 1994,
+          genre: "Crime, Drama",
+        },
+        {
+          id: "godfather",
+          title: "The Godfather",
+          year: 1972,
+          genre: "Crime, Drama",
+        },
+
+        // Medium Movies
+        {
+          id: "avatar",
+          title: "Avatar",
+          year: 2009,
+          genre: "Action, Adventure, Fantasy",
+        },
+        {
+          id: "interstellar",
+          title: "Interstellar",
+          year: 2014,
+          genre: "Adventure, Drama, Sci-Fi",
+        },
+        {
+          id: "dark-knight",
+          title: "The Dark Knight",
+          year: 2008,
+          genre: "Action, Crime, Drama",
+        },
+        {
+          id: "avengers",
+          title: "The Avengers",
+          year: 2012,
+          genre: "Action, Adventure, Sci-Fi",
+        },
+        {
+          id: "frozen",
+          title: "Frozen",
+          year: 2013,
+          genre: "Animation, Adventure, Comedy",
+        },
+        {
+          id: "toy-story",
+          title: "Toy Story",
+          year: 1995,
+          genre: "Animation, Adventure, Comedy",
+        },
+        {
+          id: "star-wars",
+          title: "Star Wars",
+          year: 1977,
+          genre: "Action, Adventure, Fantasy",
+        },
+        {
+          id: "back-to-future",
+          title: "Back to the Future",
+          year: 1985,
+          genre: "Adventure, Comedy, Sci-Fi",
+        },
+
+        // Hard Movies
+        {
+          id: "citizen-kane",
+          title: "Citizen Kane",
+          year: 1941,
+          genre: "Drama, Mystery",
+        },
+        {
+          id: "casablanca",
+          title: "Casablanca",
+          year: 1942,
+          genre: "Drama, Romance, War",
+        },
+        {
+          id: "psycho",
+          title: "Psycho",
+          year: 1960,
+          genre: "Horror, Mystery, Thriller",
+        },
+        {
+          id: "vertigo",
+          title: "Vertigo",
+          year: 1958,
+          genre: "Mystery, Romance, Thriller",
+        },
+        {
+          id: "sunset-boulevard",
+          title: "Sunset Boulevard",
+          year: 1950,
+          genre: "Drama, Film-Noir",
+        },
+        {
+          id: "singin-in-rain",
+          title: "Singin' in the Rain",
+          year: 1952,
+          genre: "Comedy, Musical, Romance",
+        },
+      ];
+
+      function createPoster(movie) {
+        const canvas = document.createElement("canvas");
+        canvas.width = 300;
+        canvas.height = 450;
+        const ctx = canvas.getContext("2d");
+
+        // Background gradient
+        const gradient = ctx.createLinearGradient(0, 0, 300, 450);
+        gradient.addColorStop(0, "#2a2a2a");
+        gradient.addColorStop(1, "#1a1a1a");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 300, 450);
+
+        // Border
+        ctx.strokeStyle = "#444";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(1, 1, 298, 448);
+
+        // Title
+        ctx.fillStyle = "#7BFF66";
+        ctx.font = "bold 18px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        // Wrap text if too long
+        const words = movie.title.split(" ");
+        let line = "";
+        let y = 200;
+
+        for (let n = 0; n < words.length; n++) {
+          const testLine = line + words[n] + " ";
+          const metrics = ctx.measureText(testLine);
+          const testWidth = metrics.width;
+
+          if (testWidth > 280 && n > 0) {
+            ctx.fillText(line, 150, y);
+            line = words[n] + " ";
+            y += 25;
+          } else {
+            line = testLine;
+          }
+        }
+        ctx.fillText(line, 150, y);
+
+        // Year
+        ctx.fillStyle = "#ccc";
+        ctx.font = "14px Arial";
+        ctx.fillText(movie.year.toString(), 150, y + 30);
+
+        // Genre
+        ctx.fillStyle = "#888";
+        ctx.font = "12px Arial";
+        const genreWords = movie.genre.split(", ");
+        let genreY = y + 60;
+        genreWords.forEach((genre) => {
+          ctx.fillText(genre.trim(), 150, genreY);
+          genreY += 15;
+        });
+
+        return canvas;
+      }
+
+      function downloadPoster(movie) {
+        const canvas = createPoster(movie);
+        const link = document.createElement("a");
+        link.download = `${movie.id}.jpg`;
+        link.href = canvas.toDataURL("image/jpeg", 0.9);
+        link.click();
+      }
+
+      // Generate poster previews
+      const postersContainer = document.getElementById("posters");
+      movies.forEach((movie) => {
+        const posterDiv = document.createElement("div");
+        posterDiv.className = "poster";
+        posterDiv.innerHTML = `
+                <div class="poster-content">
+                    <div class="movie-title">${movie.title}</div>
+                    <div class="movie-year">${movie.year}</div>
+                    <div class="movie-genre">${movie.genre}</div>
+                    <button class="download-btn" onclick="downloadPoster(${JSON.stringify(
+                      movie
+                    ).replace(/"/g, "&quot;")})">
+                        Download ${movie.id}.jpg
+                    </button>
+                </div>
+            `;
+        postersContainer.appendChild(posterDiv);
+      });
+    </script>
+  </body>
+</html>

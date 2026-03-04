@@ -1,6 +1,5 @@
 import { FaGithub, FaLinkedin, FaInstagram } from "react-icons/fa";
-import { SiAcm } from "react-icons/si";
-import { HiCode, HiHeart } from "react-icons/hi";
+import { HiHeart } from "react-icons/hi";
 
 const Footer = () => {
   return (

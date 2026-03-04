@@ -6,10 +6,6 @@
 server/node_modules/
 client/node_modules/
 
-# Build Artifacts
-# /dist
-/build
-dist
 # IDE
 .vscode/
 .idea/
