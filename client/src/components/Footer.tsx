@@ -25,7 +25,7 @@ const Footer = () => {
           <div className="flex flex-col items-center text-center">
             <div className="flex items-center mb-4 space-x-2">
               <SiAcm className="text-2xl text-[#7BFF66]" />
-              <h3 className="text-xl font-semibold text-white">ACUMEN'25</h3>
+              <h3 className="text-xl font-semibold text-white">Version'26</h3>
             </div>
             <p className="text-gray-400">Department of Computer Applications</p>
             <p className="text-gray-400">NIT Trichy</p>

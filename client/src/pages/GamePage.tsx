@@ -999,7 +999,7 @@ const GamePage = () => {
                           ctx.font = "bold 60px sans-serif";
                           ctx.textAlign = "center";
                           ctx.fillText(
-                            "ACUMEN'25",
+                            "Version'26",
                             canvas.width / 2,
                             canvas.height / 2 - 60,
                           );
