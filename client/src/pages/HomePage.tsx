@@ -50,7 +50,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
               <div className="inline-flex items-center px-6 py-3 border rounded-full shadow-2xl bg-white/10 backdrop-blur-xl border-white/20">
                 <div className="w-2 h-2 mr-3 rounded-full shadow-lg bg-emerald-400 animate-pulse shadow-emerald-400/50"></div>
                 <span className="text-base font-medium text-white/90">
-                  ACM Student Chapter NITT
+                  Version'26, 33rd Edition NITT.
                 </span>
               </div>
 
@@ -100,7 +100,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
                 </button>
 
                 <a
-                  href="https://infotrek25.tech"
+                  href="https://version26.in/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-8 py-4 text-lg font-semibold text-white transition-all duration-300 border bg-white/10 backdrop-blur-xl border-white/20 rounded-2xl hover:bg-white/20 hover:shadow-lg hover:scale-105 hover:-translate-y-1"
@@ -208,7 +208,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
             </div>
 
             <div className="text-center md:text-right">
-              <p className="mb-2 text-gray-400">Version'26, ACM NITT</p>
+              <p className="mb-2 text-gray-400">Version'26, NIT Trichy</p>
             </div>
           </div>
         </div>

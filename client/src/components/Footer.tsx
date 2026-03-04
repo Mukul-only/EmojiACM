@@ -11,7 +11,7 @@ const Footer = () => {
           {/* Brand Section */}
           <div className="flex flex-col items-center text-center md:items-start md:text-left">
             <div className="flex items-center mb-4 space-x-3">
-              <HiCode className="text-3xl text-[#7BFF66]" />
+              {/* <HiCode className="text-3xl text-[#7BFF66]" /> */}
               <span className="text-2xl font-bold text-white">
                 Emoji Charades
               </span>
@@ -24,7 +24,7 @@ const Footer = () => {
           {/* Event Info */}
           <div className="flex flex-col items-center text-center">
             <div className="flex items-center mb-4 space-x-2">
-              <SiAcm className="text-2xl text-[#7BFF66]" />
+              {/* <SiAcm className="text-2xl text-[#7BFF66]" /> */}
               <h3 className="text-xl font-semibold text-white">Version'26</h3>
             </div>
             <p className="text-gray-400">Department of Computer Applications</p>
@@ -68,7 +68,7 @@ const Footer = () => {
         {/* Copyright */}
         <div className="flex flex-col items-center pt-8 mt-8 border-t border-white/10 md:flex-row md:justify-between">
           <p className="mb-4 text-sm text-gray-400 md:mb-0">
-            © 2025 ACM Student Chapter, NIT Trichy. All rights reserved.
+            ©2026 Version'26, 33rd Edition NIT Trichy. All rights reserved.
           </p>
           <p className="flex items-center text-sm text-gray-400">
             Made with <HiHeart className="mx-1 text-[#7BFF66]" /> for emoji
